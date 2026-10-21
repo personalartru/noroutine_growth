@@ -6,7 +6,7 @@ on:
       minutes:
         description: "Сколько минут работать (максимум 20, чтобы не упереться в лимит)"
         required: false
-        default: "16"
+        default: "9"
         type: string
   push:
     branches: [main]
@@ -19,10 +19,10 @@ permissions:
 jobs:
   bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 20
     concurrency:
       group: lead-bot
-      cancel-in-progress: true
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -68,12 +68,12 @@ jobs:
           MAX_ADMIN_CHAT_ID: ${{ secrets.MAX_ADMIN_CHAT_ID || '' }}
           DISPATCH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
           POLL_TIMEOUT: "20"
-          BOT_RUN_MINUTES: ${{ inputs.minutes || '16' }}
+          BOT_RUN_MINUTES: ${{ inputs.minutes || '9' }}
           REQUESTS_CA_BUNDLE: /etc/ssl/certs/ca-certificates.crt
         run: |
-          python bot.py --run-minutes "${{ inputs.minutes || '16' }}" &
+          python bot.py --run-minutes "${{ inputs.minutes || '9' }}" &
           if [ -n "$MAX_BOT_TOKEN" ]; then
-            python max_lead.py --minutes "${{ inputs.minutes || '16' }}" &
+            python max_lead.py --minutes "${{ inputs.minutes || '9' }}" &
           else
             echo "MAX_BOT_TOKEN не задан — MAX-часть пропущена"
           fi
@@ -97,4 +97,4 @@ jobs:
           fi
           gh workflow run "Run lead bot (GitHub Actions)" \
             --ref "${{ github.ref_name }}" \
-            -f "minutes=${{ inputs.minutes || '16' }}" || echo "не удалось поставить в очередь"
+            -f "minutes=${{ inputs.minutes || '9' }}" || echo "не удалось поставить в очередь"

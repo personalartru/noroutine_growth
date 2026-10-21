@@ -49,7 +49,7 @@ jobs:
           path: .offset
           key: lead-bot-offset-${{ github.run_id }}
       - name: Поставить в очередь следующий цикл
-        if: always() && env.DISPATCH_TOKEN != ''
+        if: always() && ${{ secrets.DISPATCH_TOKEN != '' }}
         env:
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
         run: |

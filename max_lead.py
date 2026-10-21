@@ -77,6 +77,22 @@ def send_message(chat_id, text, buttons=None):
     return call("POST", "messages", query={"chat_id": chat_id}, body=body)
 
 
+def reply(chat_id, post_id, text, buttons=None):
+    """Ответ комментарием к тому же посту, иначе — сообщением в чат."""
+    if post_id:
+        try:
+            call("POST", f"messages/{post_id}/comments", body={
+                "text": text,
+                "format": "html",
+            })
+            print("Ответ комментарием к посту:", post_id)
+            return True
+        except RuntimeError as e:
+            print("Не удалось ответить комментарием:", e)
+    send_message(chat_id, text, buttons)
+    return True
+
+
 def upload_pack():
     """Два варианта загрузки: сразу с токеном или через upload-URL."""
     with open(MATERIALS_PATH, "rb") as f:
@@ -124,18 +140,15 @@ def send_pack(chat_id):
 
 
 def is_subscribed(user_id):
+    """Статус пользователя в канале: подписчик — получит материал."""
     for target in (CHANNEL_ID, f"-{CHANNEL_ID.lstrip('-')}"):
         try:
-            member = call("GET", f"chats/{target}/members/me")
-            return True
+            member = call("GET", f"chats/{target}/members/{user_id}")
         except RuntimeError:
             continue
-    try:
-        member = call("GET", f"chats/{CHANNEL_ID}/members/{user_id}")
-    except RuntimeError:
-        return None
-    status = (member or {}).get("status")
-    return status in ("creator", "administrator", "member", "restricted")
+        status = (member or {}).get("status")
+        return status in ("creator", "administrator", "member", "restricted")
+    return None
 
 
 def forward_to_admin(user_id, name, text):
@@ -182,40 +195,32 @@ def handle_event(event):
     recipient = message.get("recipient") or {}
     chat_id = recipient.get("chat_id")
     chat_type = recipient.get("chat_type")
-    user = message.get("user") or {}
-    print(f"событие {kind} | chat_type {chat_type} | chat_id(b64) "
+    post_id = recipient.get("post_id")
+    sender = message.get("sender") or event.get("user") or {}
+    user_id = sender.get("user_id")
+    name = sender.get("name") or sender.get("first_name") or ""
+    print(f"событие {kind} | chat_type {chat_type} | post_id(b64) "
+          f"{base64.b64encode(str(post_id).encode()).decode()} | chat_id(b64) "
           f"{base64.b64encode(str(chat_id).encode()).decode()} | "
-          f"user {user.get('user_id')} | текст: {text[:60]!r}")
+          f"user {user_id} | текст: {text[:60]!r}")
     if not text:
         return
 
-    recipient = message.get("recipient") or {}
-    chat_id = recipient.get("chat_id")
-    user = message.get("user") or {}
-    user_id = user.get("user_id")
-    name = user.get("name") or user.get("first_name") or ""
-
     lowered = text.lower()
-    if lowered in ("/start", "старт", "начать"):
-        if is_subscribed(user_id):
-            send_message(chat_id, TEXT_AFTER_SUB)
+    if lowered in ("/start", "старт", "начать", "материал", "/материал", "связки", "шаблоны"):
+        state = is_subscribed(user_id)
+        if state:
+            reply(chat_id, post_id, TEXT_AFTER_SUB)
             send_pack(chat_id)
             print("Выдан материал:", chat_id)
         else:
-            send_message(chat_id, TEXT_HELLO, buttons=BTN_SUB)
-        return
-
-    if lowered in ("/material", "/материал", "материал"):
-        if is_subscribed(user_id):
-            send_pack(chat_id)
-        else:
-            send_message(chat_id, "Материал доступен подписчикам канала.", buttons=BTN_SUB)
+            reply(chat_id, post_id, TEXT_HELLO, buttons=BTN_SUB)
         return
 
     if forward_to_admin(user_id, name, text):
-        send_message(chat_id, TEXT_REQUEST_SENT)
+        reply(chat_id, post_id, TEXT_REQUEST_SENT)
     else:
-        send_message(chat_id, "Запрос принят, скоро свяжемся.")
+        reply(chat_id, post_id, "Запрос принят, скоро свяжемся.")
 
 
 def main():

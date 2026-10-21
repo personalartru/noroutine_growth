@@ -1,0 +1,143 @@
+{
+  "name": "10 Serverless-функция как вход в n8n",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "serverless",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "n0001webh",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "payload",
+              "value": "={{ JSON.stringify($json.body) }}",
+              "type": "string"
+            },
+            {
+              "id": "s2",
+              "name": "ts",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false
+      },
+      "id": "n0002подг",
+      "name": "Подготовить",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.N8N_WEBHOOK_URL }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Signature",
+              "value": "={{ $env.WEBHOOK_SECRET }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ payload: $json.payload, ts: $json.ts }) }}",
+        "options": {}
+      },
+      "id": "n0003вызв",
+      "name": "Вызвать n8n",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, status: $json.status || 'accepted' } }}",
+        "options": {
+          "responseCode": 202
+        }
+      },
+      "id": "n0004отве",
+      "name": "Ответ",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Подготовить",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Подготовить": {
+      "main": [
+        [
+          {
+            "node": "Вызвать n8n",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Вызвать n8n": {
+      "main": [
+        [
+          {
+            "node": "Ответ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "noroutine-10-serverless-функция-ка",
+  "meta": {
+    "instanceId": "noroutine-pack"
+  },
+  "id": "nr-10-serverless-функция-ка",
+  "tags": [
+    "Serverless",
+    "webhook"
+  ],
+  "pinData": {}
+}

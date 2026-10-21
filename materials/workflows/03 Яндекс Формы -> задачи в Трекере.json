@@ -1,0 +1,132 @@
+{
+  "name": "03 Яндекс Формы -> задачи в Трекере",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "yandex-form",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "n0001webh",
+      "name": "Webhook формы",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const body = $json.body || {};\nconst answers = body.answers || [];\nconst get = (code) => {\n  const a = answers.find((x) => String(x.code).includes(code));\n  return a ? (a.text || a.value || '') : '';\n};\nconst title = get('question_title') || body.title || 'Заявка из формы';\nconst description = answers.map((a) => `${a.question || a.code}: ${a.text || a.value || ''}`).join('\\n');\nreturn [{ json: { summary: title, description, email: body.email || '', project: body.project || 'TMP' } }];"
+      },
+      "id": "n0002разо",
+      "name": "Разобрать ответы",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.tracker.yandex.net/v2/issues/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.TRACKER_TOKEN}}"
+            },
+            {
+              "name": "X-Tracker-Org-Id",
+              "value": "={{$env.TRACKER_ORG_ID}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ fields: { summary: $json.summary, description: $json.description, project: { id: $json.project }, type: { id: '3' } } }) }}",
+        "options": {}
+      },
+      "id": "n0003созд",
+      "name": "Создать задачу",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, key: $json.key } }}",
+        "options": {
+          "responseCode": 201
+        }
+      },
+      "id": "n0004отве",
+      "name": "Ответ",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook формы": {
+      "main": [
+        [
+          {
+            "node": "Разобрать ответы",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Разобрать ответы": {
+      "main": [
+        [
+          {
+            "node": "Создать задачу",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Создать задачу": {
+      "main": [
+        [
+          {
+            "node": "Ответ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "noroutine-03-яндекс-формы-->-задач",
+  "meta": {
+    "instanceId": "noroutine-pack"
+  },
+  "id": "nr-03-яндекс-формы-->-задач",
+  "tags": [
+    "Трекер",
+    "Формы"
+  ],
+  "pinData": {}
+}

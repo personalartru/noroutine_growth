@@ -1,0 +1,153 @@
+{
+  "name": "01 Tracker: вебхук -> новая задача",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tracker-task",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "n0001webh",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1",
+              "name": "summary",
+              "value": "={{ $json.body.title }}",
+              "type": "string"
+            },
+            {
+              "id": "f2",
+              "name": "description",
+              "value": "={{ $json.body.description }}",
+              "type": "string"
+            },
+            {
+              "id": "f3",
+              "name": "project",
+              "value": "={{ $json.body.project || 'TMP' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false
+      },
+      "id": "n0002собр",
+      "name": "Собрать задачу",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.tracker.yandex.net/v2/issues/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.TRACKER_TOKEN}}"
+            },
+            {
+              "name": "X-Tracker-Org-Id",
+              "value": "={{$env.TRACKER_ORG_ID}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ fields: { summary: $json.summary, description: $json.description, project: { id: $json.project }, type: { id: '3' } } }) }}",
+        "options": {}
+      },
+      "id": "n0003созд",
+      "name": "Создать задачу",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, issueId: $json.id, key: $json.key } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "n0004отве",
+      "name": "Ответ",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Собрать задачу",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Собрать задачу": {
+      "main": [
+        [
+          {
+            "node": "Создать задачу",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Создать задачу": {
+      "main": [
+        [
+          {
+            "node": "Ответ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "noroutine-01-tracker:-вебхук-->-но",
+  "meta": {
+    "instanceId": "noroutine-pack"
+  },
+  "id": "nr-01-tracker:-вебхук-->-но",
+  "tags": [
+    "Трекер",
+    "webhook"
+  ],
+  "pinData": {}
+}

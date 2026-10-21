@@ -1,0 +1,16 @@
+[Unit]
+Description=No! Routine — бот выдачи лид-магнита
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=noroutine
+WorkingDirectory=/opt/noroutine-growth
+EnvironmentFile=/opt/noroutine-growth/.env
+ExecStart=/opt/noroutine-growth/.venv/bin/python bot.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

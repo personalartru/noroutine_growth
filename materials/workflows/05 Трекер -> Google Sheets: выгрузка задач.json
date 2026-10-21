@@ -1,0 +1,132 @@
+{
+  "name": "05 Трекер -> Google Sheets: выгрузка задач",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ]
+        }
+      },
+      "id": "n0001расп",
+      "name": "Расписание",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.tracker.yandex.net/v2/issues/?fields=id,key,summary,status,assignee,updatedAt&limit=200",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.TRACKER_TOKEN}}"
+            },
+            {
+              "name": "X-Tracker-Org-Id",
+              "value": "={{$env.TRACKER_ORG_ID}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n0002забр",
+      "name": "Забрать задачи",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return $input.all().map((item) => ({\n  json: {\n    key: item.json.key,\n    summary: item.json.summary,\n    status: item.json.status,\n    assignee: item.json.assignee && item.json.assignee.name ? item.json.assignee.name : '',\n    updatedAt: item.json.updatedAt || '',\n  },\n}));"
+      },
+      "id": "n0003прив",
+      "name": "Привести к строке",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": "={{ $env.SHEETS_ID }}",
+        "sheetName": "Задачи",
+        "operation": "append",
+        "columns": "={{ ['key','summary','status','assignee','updatedAt'] }}"
+      },
+      "id": "n0004допи",
+      "name": "Дописать в таблицу",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Расписание": {
+      "main": [
+        [
+          {
+            "node": "Забрать задачи",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Забрать задачи": {
+      "main": [
+        [
+          {
+            "node": "Привести к строке",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Привести к строке": {
+      "main": [
+        [
+          {
+            "node": "Дописать в таблицу",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "noroutine-05-трекер-->-google-shee",
+  "meta": {
+    "instanceId": "noroutine-pack"
+  },
+  "id": "nr-05-трекер-->-google-shee",
+  "tags": [
+    "Трекер",
+    "Google Sheets"
+  ],
+  "pinData": {}
+}

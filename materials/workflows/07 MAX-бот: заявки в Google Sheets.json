@@ -1,0 +1,168 @@
+{
+  "name": "07 MAX-бот: заявки в Google Sheets",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "max-bot",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "n0001webh",
+      "name": "Webhook MAX",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const body = $json.body || {};\nconst msg = body.message || {};\nconst text = msg.body && msg.body.text ? msg.body.text : (body.text || '');\nconst user = body.user || {};\nreturn [{ json: {\n  text: text,\n  userId: user.user_id || '',\n  name: user.name || '',\n  chatId: body.chat_id || '',\n  created: new Date().toISOString(),\n} }];"
+      },
+      "id": "n0002разо",
+      "name": "Разобрать сообщение",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": "={{ $env.SHEETS_ID }}",
+        "sheetName": "MAX заявки",
+        "operation": "append",
+        "columns": "={{ ['created','userId','name','text'] }}"
+      },
+      "id": "n0003запи",
+      "name": "Записать в таблицу",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://platform-api2.max.ru/messages",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $json.chatId }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $env.MAX_BOT_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: 'Принял, спасибо! Отвечу в рабочее время.', format: 'html', notify: true }) }}",
+        "options": {}
+      },
+      "id": "n0004отве",
+      "name": "Ответ в MAX",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "n0005отве",
+      "name": "Ответ на вебхук",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook MAX": {
+      "main": [
+        [
+          {
+            "node": "Разобрать сообщение",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Разобрать сообщение": {
+      "main": [
+        [
+          {
+            "node": "Записать в таблицу",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Записать в таблицу": {
+      "main": [
+        [
+          {
+            "node": "Ответ в MAX",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ответ в MAX": {
+      "main": [
+        [
+          {
+            "node": "Ответ на вебхук",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "noroutine-07-max-бот:-заявки-в-goo",
+  "meta": {
+    "instanceId": "noroutine-pack"
+  },
+  "id": "nr-07-max-бот:-заявки-в-goo",
+  "tags": [
+    "MAX",
+    "Google Sheets"
+  ],
+  "pinData": {}
+}

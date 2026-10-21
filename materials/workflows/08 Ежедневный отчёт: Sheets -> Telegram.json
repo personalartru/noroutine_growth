@@ -1,0 +1,121 @@
+{
+  "name": "08 Ежедневный отчёт: Sheets -> Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ]
+        }
+      },
+      "id": "n0001расп",
+      "name": "Расписание 08:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": "={{ $env.SHEETS_ID }}",
+        "sheetName": "Задачи",
+        "range": "A:E",
+        "options": {}
+      },
+      "id": "n0002проч",
+      "name": "Прочитать таблицу",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 2.2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const rows = $input.all().map((i) => i.json);\nconst byStatus = {};\nfor (const r of rows) {\n  const s = r.status || 'не указан';\n  byStatus[s] = (byStatus[s] || 0) + 1;\n}\nconst lines = Object.entries(byStatus).map(([k, v]) => `${k}: ${v}`);\nreturn [{ json: { report: `Задач всего: ${rows.length}\\n` + lines.join('\\n') } }];"
+      },
+      "id": "n0003собр",
+      "name": "Собрать отчёт",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TG_CHAT_ID }}",
+        "text": "={{ 'Отчёт за день\\n' + $json.report }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "n0004отпр",
+      "name": "Отправить отчёт",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        660,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Расписание 08:00": {
+      "main": [
+        [
+          {
+            "node": "Прочитать таблицу",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Прочитать таблицу": {
+      "main": [
+        [
+          {
+            "node": "Собрать отчёт",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Собрать отчёт": {
+      "main": [
+        [
+          {
+            "node": "Отправить отчёт",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "noroutine-08-ежедневный-отчёт:-she",
+  "meta": {
+    "instanceId": "noroutine-pack"
+  },
+  "id": "nr-08-ежедневный-отчёт:-she",
+  "tags": [
+    "Google Sheets",
+    "Telegram"
+  ],
+  "pinData": {}
+}

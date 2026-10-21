@@ -1,0 +1,141 @@
+{
+  "name": "09 REST API: лид с валидацией и записью",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "intake",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "n0001webh",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const body = $json.body || {};\nconst email = body.email || '';\nconst ok = /^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(email);\nif (!ok) { return [{ json: { valid: false, error: 'Некорректный email' } }]; }\nreturn [{ json: { valid: true, email: email, message: body.message || '', created: new Date().toISOString() } }];"
+      },
+      "id": "n0002вали",
+      "name": "Валидация",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: false, error: $json.error } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "n0003ошиб",
+      "name": "Ошибка 400",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": "={{ $env.SHEETS_ID }}",
+        "sheetName": "Лиды",
+        "operation": "append",
+        "columns": "={{ ['created','email','message'] }}"
+      },
+      "id": "n0004сохр",
+      "name": "Сохранить заявку",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "n0005отве",
+      "name": "Ответ 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Валидация",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Валидация": {
+      "main": [
+        [
+          {
+            "node": "Сохранить заявку",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ошибка 400",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Сохранить заявку": {
+      "main": [
+        [
+          {
+            "node": "Ответ 200",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "noroutine-09-rest-api:-лид-с-валид",
+  "meta": {
+    "instanceId": "noroutine-pack"
+  },
+  "id": "nr-09-rest-api:-лид-с-валид",
+  "tags": [
+    "Webhook",
+    "Google Sheets"
+  ],
+  "pinData": {}
+}

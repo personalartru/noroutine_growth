@@ -1,0 +1,187 @@
+{
+  "name": "02 Tracker: автоназначение и уведомление",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tracker-status",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "n0001webh",
+      "name": "Webhook статуса",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "issueId",
+              "value": "={{ $json.body.issueId }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "status",
+              "value": "={{ $json.body.status }}",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "assignee",
+              "value": "={{ $json.body.assignee || $env.TRACKER_DEFAULT_ASSIGNEE }}",
+              "type": "string"
+            },
+            {
+              "id": "a4",
+              "name": "summary",
+              "value": "={{ $json.body.summary }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false
+      },
+      "id": "n0002данн",
+      "name": "Данные задачи",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.TRACKER_URL + '/v2/issues/' + $json.issueId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.TRACKER_TOKEN}}"
+            },
+            {
+              "name": "X-Tracker-Org-Id",
+              "value": "={{$env.TRACKER_ORG_ID}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ fields: { assignee: { id: $json.assignee } } }) }}",
+        "options": {}
+      },
+      "id": "n0003назн",
+      "name": "Назначить ответственного",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TG_CHAT_ID }}",
+        "text": "={{ 'Задача ' + $json.summary + ' перешла в статус ' + $json.status + '. Ответственный назначен автоматически.' }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "n0004увед",
+      "name": "Уведомить в Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "n0005отве",
+      "name": "Ответ",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook статуса": {
+      "main": [
+        [
+          {
+            "node": "Данные задачи",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Данные задачи": {
+      "main": [
+        [
+          {
+            "node": "Назначить ответственного",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Назначить ответственного": {
+      "main": [
+        [
+          {
+            "node": "Уведомить в Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Уведомить в Telegram": {
+      "main": [
+        [
+          {
+            "node": "Ответ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "noroutine-02-tracker:-автоназначен",
+  "meta": {
+    "instanceId": "noroutine-pack"
+  },
+  "id": "nr-02-tracker:-автоназначен",
+  "tags": [
+    "Трекер",
+    "Telegram"
+  ],
+  "pinData": {}
+}

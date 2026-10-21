@@ -1,0 +1,210 @@
+{
+  "name": "04 AI-комментарии к задачам в Трекере",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 8
+            }
+          ]
+        }
+      },
+      "id": "n0001расп",
+      "name": "Расписание",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.tracker.yandex.net/v2/issues/?fields=id,key,summary,status,updatedAt&limit=50",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.TRACKER_TOKEN}}"
+            },
+            {
+              "name": "X-Tracker-Org-Id",
+              "value": "={{$env.TRACKER_ORG_ID}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n0002забр",
+      "name": "Забрать задачи",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const out = [];\nfor (const item of $input.all()) {\n  const issue = item.json;\n  if (!issue || !issue.id) continue;\n  if (issue.updatedAt && Date.now() - new Date(issue.updatedAt).getTime() < 3600000) continue;\n  out.push({ json: { id: issue.id, key: issue.key, summary: issue.summary } });\n}\nreturn out;"
+      },
+      "id": "n0003выбр",
+      "name": "Выбрать без комментария",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "operation": "message",
+        "model": "gpt-4o-mini",
+        "promptType": "define",
+        "text": "=Ты тимлид. По задаче {{$json.key}} — {{$json.summary}} — напиши один короткий комментарий (до 400 символов): что делать дальше и какой риск. Без воды, по-русски.",
+        "options": {
+          "temperature": 0.4
+        }
+      },
+      "id": "n0004llm-",
+      "name": "LLM-комментарий",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.TRACKER_URL + '/v2/issues/' + $json.id + '/comments' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.TRACKER_TOKEN}}"
+            },
+            {
+              "name": "X-Tracker-Org-Id",
+              "value": "={{$env.TRACKER_ORG_ID}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ comment: $json.text }) }}",
+        "options": {}
+      },
+      "id": "n0005доба",
+      "name": "Добавить комментарий",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TG_CHAT_ID }}",
+        "text": "={{ 'AI добавил комментарии к ' + $input.all().length + ' задачам.' }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "n0006отчё",
+      "name": "Отчёт в Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1100,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Расписание": {
+      "main": [
+        [
+          {
+            "node": "Забрать задачи",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Забрать задачи": {
+      "main": [
+        [
+          {
+            "node": "Выбрать без комментария",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Выбрать без комментария": {
+      "main": [
+        [
+          {
+            "node": "LLM-комментарий",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM-комментарий": {
+      "main": [
+        [
+          {
+            "node": "Добавить комментарий",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Добавить комментарий": {
+      "main": [
+        [
+          {
+            "node": "Отчёт в Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "noroutine-04-ai-комментарии-к-зада",
+  "meta": {
+    "instanceId": "noroutine-pack"
+  },
+  "id": "nr-04-ai-комментарии-к-зада",
+  "tags": [
+    "Трекер",
+    "AI"
+  ],
+  "pinData": {}
+}

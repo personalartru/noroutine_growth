@@ -13,7 +13,7 @@ MATERIALS_PATH = os.environ.get("MATERIALS_PATH", "materials/noroutine-n8n-pack.
 
 
 def main():
-    print("=== 1. POST /uploads?type=file (без файла) ===")
+    print("=== 1. POST /uploads?type=file (без файла) ===")  # диагностика формата
     r = requests.post(f"{MAX_API}/uploads", params={"type": "file"},
                       headers={"Authorization": TOKEN}, timeout=60)
     print("HTTP", r.status_code, r.text[:400])

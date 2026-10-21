@@ -48,6 +48,15 @@ jobs:
             .max_offset
           key: lead-bot-offset-${{ github.run_id }}
           restore-keys: lead-bot-offset-
+      - name: Проверить загрузку файла в MAX
+        env:
+          MAX_BOT_TOKEN: ${{ secrets.MAX_BOT_TOKEN }}
+          MAX_ADMIN_CHAT_ID: ${{ secrets.MAX_ADMIN_CHAT_ID }}
+          REQUESTS_CA_BUNDLE: /etc/ssl/certs/ca-certificates.crt
+        run: |
+          if [ -n "$MAX_BOT_TOKEN" ]; then
+            python max_upload_check.py
+          fi
       - name: Опрашивать Telegram и MAX
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.LEAD_BOT_TOKEN }}

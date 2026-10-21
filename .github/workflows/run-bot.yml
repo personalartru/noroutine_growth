@@ -39,6 +39,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.LEAD_BOT_TOKEN }}
           CHANNEL_USERNAME: ${{ secrets.LEAD_CHANNEL_USERNAME }}
           ADMIN_CHAT_ID: ${{ secrets.LEAD_ADMIN_CHAT_ID }}
+          DISPATCH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
           POLL_TIMEOUT: "20"
           BOT_RUN_MINUTES: ${{ inputs.minutes || '8' }}
         run: python bot.py --run-minutes "${{ inputs.minutes || '8' }}"
@@ -47,3 +48,11 @@ jobs:
         with:
           path: .offset
           key: lead-bot-offset-${{ github.run_id }}
+      - name: Поставить в очередь следующий цикл
+        if: always() && env.DISPATCH_TOKEN != ''
+        env:
+          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
+        run: |
+          gh workflow run "Run lead bot (GitHub Actions)" \
+            --ref "${{ github.ref_name }}" \
+            -f minutes "${{ inputs.minutes || '8' }}" || echo "не удалось поставить в очередь"

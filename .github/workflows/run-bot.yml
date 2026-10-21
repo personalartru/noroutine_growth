@@ -49,10 +49,14 @@ jobs:
           path: .offset
           key: lead-bot-offset-${{ github.run_id }}
       - name: Поставить в очередь следующий цикл
-        if: always() && ${{ secrets.DISPATCH_TOKEN != '' }}
+        if: always()
         env:
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
         run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "DISPATCH_TOKEN не задан — следующий цикл не запущен"
+            exit 0
+          fi
           gh workflow run "Run lead bot (GitHub Actions)" \
             --ref "${{ github.ref_name }}" \
             -f minutes "${{ inputs.minutes || '8' }}" || echo "не удалось поставить в очередь"

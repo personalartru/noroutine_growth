@@ -25,6 +25,7 @@ jobs:
           ADMIN_CHAT_ID: ${{ secrets.LEAD_ADMIN_CHAT_ID }}
         run: python bot.py --check
       - name: Сквозная проверка (выдать архив в личку админа)
+        if: github.event_name == 'workflow_dispatch' 
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.LEAD_BOT_TOKEN }}
           CHANNEL_USERNAME: ${{ secrets.LEAD_CHANNEL_USERNAME }}

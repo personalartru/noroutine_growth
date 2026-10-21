@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lead-bot-config
+  namespace: lead-bot
+data:
+  # Канал в MAX: chat_id отрицательный, -71062363105923
+  MAX_CHANNEL_ID: "-71062363105923"
+  # Канал в Telegram, который бот проверяет на подписку
+  CHANNEL_USERNAME: "@noroutine2026"
+  # Файлы состояния (offset и отложенные заявки) на PVC
+  OFFSET_FILE: "/state/.offset"
+  MAX_OFFSET_FILE: "/state/.max_offset"
+  MAX_PENDING_FILE: "/state/.max_pending.json"
+  # requests использует системный bundle с сертификатами Минцифры
+  REQUESTS_CA_BUNDLE: "/app/ca-bundle.pem"
+  PYTHONUNBUFFERED: "1"

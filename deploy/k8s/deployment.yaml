@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lead-bot
+  namespace: lead-bot
+  labels:
+    app.kubernetes.io/name: lead-bot
+spec:
+  # Один реплика: два поллера одного бота дают 409 Conflict в getUpdates.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: lead-bot
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: lead-bot
+    spec:
+      terminationGracePeriodSeconds: 30
+      initContainers:
+        # Тянем код и ставим зависимости + сертификаты Минцифры (нужны API MAX).
+        - name: fetch
+          image: python:3.12-slim
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              apt-get update -qq
+              apt-get install -y -qq --no-install-recommends git ca-certificates curl >/dev/null
+              rm -rf /app/*
+              git clone --depth 1 https://github.com/personalartru/noroutine_growth.git /app
+              cd /app
+              python3 -m venv .venv
+              ./.venv/bin/pip install -q --no-cache-dir -r requirements.txt
+              ./.venv/bin/python build_materials.py
+              curl -fsSL https://gu-st.ru/content/lending/russian_trusted_root_ca_pem.crt -o /tmp/root.crt
+              curl -fsSL https://gu-st.ru/content/lending/russian_trusted_sub_ca_pem.crt -o /tmp/sub.crt
+              cat /etc/ssl/certs/ca-certificates.crt /tmp/root.crt /tmp/sub.crt > /app/ca-bundle.pem
+          volumeMounts:
+            - name: app
+              mountPath: /app
+      containers:
+        - name: bot
+          image: python:3.12-slim
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              /app/.venv/bin/python bot.py --run-minutes 100000 &
+              /app/.venv/bin/python max_lead.py --minutes 100000 &
+              wait
+          envFrom:
+            - secretRef:
+                name: lead-bot-env
+            - configMapRef:
+                name: lead-bot-config
+          volumeMounts:
+            - name: app
+              mountPath: /app
+            - name: state
+              mountPath: /state
+          resources:
+            requests:
+              cpu: 50m
+              memory: 192Mi
+            limits:
+              memory: 384Mi
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "10"]
+      volumes:
+        - name: app
+          emptyDir: {}
+        - name: state
+          persistentVolumeClaim:
+            claimName: lead-bot-state

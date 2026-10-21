@@ -1,0 +1,62 @@
+name: Deploy lead bot
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "bot.py"
+      - "max_lead.py"
+      - "footer.py"
+      - "requirements.txt"
+      - "deploy/k8s/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Установить kubectl
+        run: |
+          curl -sSLo kubectl "https://dl.k8s.io/release/v1.30.4/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/kubectl
+          kubectl version --client=true
+      - name: Подготовить kubeconfig
+        id: prepare
+        run: |
+          mkdir -p ~/.kube
+          if [ -z "${{ secrets.KUBECONFIG }}" ]; then
+            echo "KUBECONFIG не задан — деплой пропущен (добавьте секрет в настройках репозитория)"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+      - name: Применить манифесты
+        if: steps.prepare.outputs.skip != 'true' 
+        run: |
+          kubectl apply -f deploy/k8s/namespace.yaml
+          kubectl apply -k deploy/k8s
+          kubectl -n lead-bot get secret lead-bot-env >/dev/null 2>&1 || {
+            echo "Секрет lead-bot-env не найден: заполните .env.k8s и выполните k8s/sync-secrets.sh" >&2
+            exit 1
+          }
+          kubectl -n lead-bot rollout restart deployment/lead-bot
+          kubectl -n lead-bot rollout status deployment/lead-bot --timeout=300
+          kubectl -n lead-bot get pods -o wide
+          kubectl -n lead-bot logs -l app.kubernetes.io/name=lead-bot --tail=30 --max-log-requests=2 || true
+      - name: Отключить CI-цикл опроса
+        if: steps.prepare.outputs.skip != 'true' 
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # В кластере бот работает постоянно. Второй поллер даёт 409 Conflict
+          # в getUpdates и сбивает обоих, поэтому CI-цикл выключаем.
+          gh workflow disable "Run lead bot (GitHub Actions)" --repo "${{ github.repository }}" || true
+          echo "CI-цикл отключён. Включить обратно: gh workflow enable \"Run lead bot (GitHub Actions)\""

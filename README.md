@@ -173,6 +173,37 @@ GitHub отключает scheduled-workflows при простое репози
 Для мгновенных ответов — systemd на VPS или `deploy/k8s/lead-bot.yaml`
 (манифесты под ваш кластер: Deployment + PVC под offset, `kubectl apply -f`).
 
+## Постоянный деплой в Kubernetes (продакшн)
+
+Манифесты в `deploy/k8s/` — по вашим конвенциям (namespace, PVC на состояние,
+ConfigMap, Deployment с initContainer, который тянет код и ставит сертификаты
+Минцифры). Один реплика: два поллера одного бота дают 409 Conflict.
+
+**Раскатка вручную:**
+
+```bash
+# 1. секреты: заполнить .env.k8s в корне репозитория
+#    TELEGRAM_BOT_TOKEN=... LEAD_CHANNEL_USERNAME=@noroutine2026
+#    LEAD_ADMIN_CHAT_ID=270479866 MAX_BOT_TOKEN=...
+#    MAX_ADMIN_CHAT_ID=60669315 MAX_PING_CHAT_ID=485434975
+bash deploy/k8s/sync-secrets.sh
+bash deploy/k8s/deploy.sh
+```
+
+**Раскатка из CI:** добавьте в репозиторий секрет `KUBECONFIG` (base64 от
+вашего kubeconfig) — тогда workflow `Deploy lead bot` сам применит манифесты и
+перезапустит под. Любой коммит в `main`, затронувший код бота или манифесты,
+автоматически уезжает в кластер.
+
+**Важно:** после того как бот заработал в кластере, CI-цикл опроса
+(`Run lead bot (GitHub Actions)`) надо отключить — иначе два поллера будут
+мешать друг другу. Workflow `Deploy lead bot` отключает его сам после
+успешного деплоя; включить обратно:
+
+```bash
+gh workflow enable "Run lead bot (GitHub Actions)"
+```
+
 ## Деплой по кнопке (GitHub Actions)
 
 Workflow `Deploy bot` сам подключается к серверу по SSH и выполняет

@@ -51,15 +51,19 @@ jobs:
           CHANNEL_USERNAME: ${{ secrets.LEAD_CHANNEL_USERNAME }}
           ADMIN_CHAT_ID: ${{ secrets.LEAD_ADMIN_CHAT_ID }}
           MAX_BOT_TOKEN: ${{ secrets.MAX_BOT_TOKEN }}
-          MAX_CHANNEL_ID: ${{ secrets.MAX_CHANNEL_ID }}
-          MAX_ADMIN_CHAT_ID: ${{ secrets.MAX_ADMIN_CHAT_ID }}
+          MAX_CHANNEL_ID: ${{ secrets.MAX_CHANNEL_ID || '-71062363105923' }}
+          MAX_ADMIN_CHAT_ID: ${{ secrets.MAX_ADMIN_CHAT_ID || '' }}
           DISPATCH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
           POLL_TIMEOUT: "20"
           BOT_RUN_MINUTES: ${{ inputs.minutes || '16' }}
           REQUESTS_CA_BUNDLE: /etc/ssl/certs/ca-certificates.crt
         run: |
           python bot.py --run-minutes "${{ inputs.minutes || '16' }}" &
-          python max_lead.py --minutes "${{ inputs.minutes || '16' }}" &
+          if [ -n "$MAX_BOT_TOKEN" ]; then
+            python max_lead.py --minutes "${{ inputs.minutes || '16' }}" &
+          else
+            echo "MAX_BOT_TOKEN не задан — MAX-часть пропущена"
+          fi
           wait
       - name: Сохранить offset
         uses: actions/cache/save@v4

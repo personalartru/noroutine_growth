@@ -122,11 +122,11 @@ systemctl restart noroutine-bot
 2. Сгенерируйте QR для диплинка:
 
    ```bash
-   python scripts/make_qr.py "https://t.me/<BOT_USERNAME>?start=site" ../noroutine/lead-qr.png
+   python scripts/make_qr.py "https://t.me/noroutine_ai_bot?start=site" ../noroutine/lead-qr.png
    ```
 
 3. В `personalartru/noroutine` (ветка `feat/channels-cta`) замените `href`
-   в блоке «// Лид-магнит» на `https://t.me/<BOT_USERNAME>?start=site` и
+   в блоке «// Лид-магнит» на `https://t.me/noroutine_ai_bot?start=site` и
    положите рядом `lead-qr.png`.
 4. В описаниях видео на YouTube и Rutube — та же диплинка с меткой источника
    (`?start=youtube`, `?start=rutube`), чтобы видеть, какой площадка работает.
@@ -136,7 +136,7 @@ systemctl restart noroutine-bot
 1. Создать бота, добавить его администратором канала `@noroutine2026`.
 2. `python build_materials.py` — собрать ZIP.
 3. Задеплоить бота (systemd или Docker), заполнить `.env`.
-4. Проверить: `https://t.me/<BOT_USERNAME>?start=test` → бот должен спросить
+4. Проверить: `https://t.me/noroutine_ai_bot?start=test` → бот должен спросить
    подписку и выдать архив после подписки на канал.
 5. Опубликовать и закрепить пост-визитку (workflow `Publish pinned post`
    в `noroutine_posting`, вручную).

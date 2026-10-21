@@ -36,7 +36,7 @@ GRAIT.
 
 Разбор в видео: https://youtu.be/BietdUfAX5U
 
-У меня есть 10 таких шаблонов (Трекер, Формы, отчёты, боты в Telegram и MAX) — присылаю архив, если нужно: https://t.me/<BOT_USERNAME>?start=max
+У меня есть 10 таких шаблонов (Трекер, Формы, отчёты, боты в Telegram и MAX) — присылаю архив, если нужно: https://t.me/noroutine_ai_bot?start=max
 
 Вопрос: у кого в MAX уже есть бот-приёмник заявок?
 ```

@@ -107,3 +107,39 @@ systemctl restart noroutine-bot
 
 Файл отдаётся заново при каждом `/material`, поэтому новые шаблоны можно
 выкатывать без правок в боте.
+
+## Связанные репозитории
+
+| Что | Где |
+|---|---|
+| Закреплённый пост канала + скрипт `publish_pinned.py` | `personalartru/noroutine_posting`, ветка `feat/pinned-post` |
+| Автопостинг в MAX | `personalartru/noroutine_posting`, ветка `feat/max-crossposting` |
+| CTA-блоки и QR на сайте | `personalartru/noroutine`, ветка `feat/channels-cta` |
+
+## Интеграция с сайтом
+
+1. Создайте бота и получите юзернейм.
+2. Сгенерируйте QR для диплинка:
+
+   ```bash
+   python scripts/make_qr.py "https://t.me/<BOT_USERNAME>?start=site" ../noroutine/lead-qr.png
+   ```
+
+3. В `personalartru/noroutine` (ветка `feat/channels-cta`) замените `href`
+   в блоке «// Лид-магнит» на `https://t.me/<BOT_USERNAME>?start=site` и
+   положите рядом `lead-qr.png`.
+4. В описаниях видео на YouTube и Rutube — та же диплинка с меткой источника
+   (`?start=youtube`, `?start=rutube`), чтобы видеть, какой площадка работает.
+
+## Порядок запуска
+
+1. Создать бота, добавить его администратором канала `@noroutine2026`.
+2. `python build_materials.py` — собрать ZIP.
+3. Задеплоить бота (systemd или Docker), заполнить `.env`.
+4. Проверить: `https://t.me/<BOT_USERNAME>?start=test` → бот должен спросить
+   подписку и выдать архив после подписки на канал.
+5. Опубликовать и закрепить пост-визитку (workflow `Publish pinned post`
+   в `noroutine_posting`, вручную).
+6. Поставить ссылки на бота на сайт, в описания видео, в посты.
+7. Комментинг — по шаблонам из `growth/commenting_templates.md`.
+

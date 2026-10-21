@@ -3,3 +3,4 @@
 events.jsonl
 __pycache__/
 .env.k8s
+deploy/k8s/sa-kubeconfig.yaml

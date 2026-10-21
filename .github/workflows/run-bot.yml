@@ -59,4 +59,4 @@ jobs:
           fi
           gh workflow run "Run lead bot (GitHub Actions)" \
             --ref "${{ github.ref_name }}" \
-            -f minutes "${{ inputs.minutes || '8' }}" || echo "не удалось поставить в очередь"
+            -f "minutes=${{ inputs.minutes || '8' }}" || echo "не удалось поставить в очередь"

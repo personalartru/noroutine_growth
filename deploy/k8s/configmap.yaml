@@ -14,4 +14,6 @@ data:
   MAX_PENDING_FILE: "/state/.max_pending.json"
   # requests использует системный bundle с сертификатами Минцифры
   REQUESTS_CA_BUNDLE: "/app/ca-bundle.pem"
+  # Материалы лежат в /app (том же volume, что и код)
+  MATERIALS_PATH: "/app/materials/noroutine-n8n-pack.zip"
   PYTHONUNBUFFERED: "1"

@@ -38,6 +38,26 @@ jobs:
           echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
           chmod 600 ~/.kube/config
           echo "skip=false" >> "$GITHUB_OUTPUT"
+      - name: Синхронизировать секреты
+        if: steps.prepare.outputs.skip != 'true' 
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.LEAD_BOT_TOKEN }}
+          LEAD_CHANNEL_USERNAME: ${{ secrets.LEAD_CHANNEL_USERNAME }}
+          LEAD_ADMIN_CHAT_ID: ${{ secrets.LEAD_ADMIN_CHAT_ID }}
+          MAX_BOT_TOKEN: ${{ secrets.MAX_BOT_TOKEN }}
+          MAX_ADMIN_CHAT_ID: ${{ secrets.MAX_ADMIN_CHAT_ID }}
+          MAX_PING_CHAT_ID: ${{ secrets.MAX_PING_CHAT_ID }}
+        run: |
+          kubectl apply -f deploy/k8s/namespace.yaml
+          kubectl -n lead-bot create secret generic lead-bot-env \
+            --from-literal=TELEGRAM_BOT_TOKEN="$TELEGRAM_BOT_TOKEN" \
+            --from-literal=LEAD_CHANNEL_USERNAME="$LEAD_CHANNEL_USERNAME" \
+            --from-literal=LEAD_ADMIN_CHAT_ID="$LEAD_ADMIN_CHAT_ID" \
+            --from-literal=MAX_BOT_TOKEN="$MAX_BOT_TOKEN" \
+            --from-literal=MAX_ADMIN_CHAT_ID="$MAX_ADMIN_CHAT_ID" \
+            --from-literal=MAX_PING_CHAT_ID="$MAX_PING_CHAT_ID" \
+            --dry-run=client -o yaml | kubectl apply -f -
+          echo "Секрет lead-bot-env синхронизирован"
       - name: Применить манифесты
         if: steps.prepare.outputs.skip != 'true' 
         run: |

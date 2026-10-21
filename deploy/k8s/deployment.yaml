@@ -44,6 +44,7 @@ spec:
       containers:
         - name: bot
           image: python:3.12-slim
+          workingDir: /app
           command: ["/bin/sh", "-c"]
           args:
             - |

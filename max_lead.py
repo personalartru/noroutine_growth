@@ -179,6 +179,13 @@ def handle_event(event):
     message = event.get("message") or {}
     body = message.get("body") or {}
     text = (body.get("text") or "").strip()
+    recipient = message.get("recipient") or {}
+    chat_id = recipient.get("chat_id")
+    chat_type = recipient.get("chat_type")
+    user = message.get("user") or {}
+    print(f"событие {kind} | chat_type {chat_type} | chat_id(b64) "
+          f"{base64.b64encode(str(chat_id).encode()).decode()} | "
+          f"user {user.get('user_id')} | текст: {text[:60]!r}")
     if not text:
         return
 

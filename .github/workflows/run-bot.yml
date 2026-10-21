@@ -20,6 +20,9 @@ jobs:
   bot:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    concurrency:
+      group: lead-bot
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

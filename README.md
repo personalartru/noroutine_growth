@@ -112,9 +112,9 @@ systemctl restart noroutine-bot
 
 | Что | Где |
 |---|---|
-| Закреплённый пост канала + скрипт `publish_pinned.py` | `personalartru/noroutine_posting`, ветка `feat/pinned-post` |
-| Автопостинг в MAX | `personalartru/noroutine_posting`, ветка `feat/max-crossposting` |
-| CTA-блоки и QR на сайте | `personalartru/noroutine`, ветка `feat/channels-cta` |
+| Закреплённый пост, автопостинг в MAX, футер с лид-магнитом и 6 переписанных постов | `personalartru/noroutine_posting`, ветка `feat/growth-fixes` (всё в одной ветке) |
+| CTA-блоки, QR и блок лид-магнита на сайте | `personalartru/noroutine`, ветка `feat/channels-cta` |
+| Тексты взаимопиара в MAX и кросс-ссылки Telegram ↔ MAX | `growth/max_mutual_promo.md` |
 
 ## Интеграция с сайтом
 

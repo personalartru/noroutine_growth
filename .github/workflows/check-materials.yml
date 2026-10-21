@@ -1,0 +1,25 @@
+name: Check materials
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Собрать лид-магнит и сверить с репозиторием
+        run: |
+          python build_materials.py
+          if ! git diff --quiet; then
+            echo "::error::Материалы в репозитории разошлись с build_materials.py — запустите локально и закоммитьте."
+            git diff --stat
+            exit 1
+          fi
+          echo "Материалы актуальны."

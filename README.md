@@ -46,6 +46,24 @@ python bot.py           # запуск (long polling, держите окно о
 3. Узнать `ADMIN_CHAT_ID` — написать боту любой текст и взять из лога
    (`events.jsonl`) значение `chat_id`.
 
+### Как узнать ADMIN_CHAT_ID
+
+Это числовой ID вашего чата с ботом (у личного аккаунта Telegram он
+совпадает с ID пользователя). Три способа:
+
+1. **Через @userinfobot** или **@getmyid_bot** — напишите любому из них,
+   в ответе будет ваш ID (например `123456789`).
+2. **Из лога бота**: после первого сообщения боту в `events.jsonl` появится
+   строка вида `{"event": "start", "chat_id": 123456789, ...}` — возьмите
+   значение `chat_id`.
+3. **Через @RawDataBot** — он вернёт JSON с вашим `id`.
+
+В `.env` пишите просто число, без плюса и кавычек:
+
+```
+ADMIN_CHAT_ID=123456789
+```
+
 ### Переменные окружения
 
 | Переменная | Назначение |
@@ -53,7 +71,7 @@ python bot.py           # запуск (long polling, держите окно о
 | `TELEGRAM_BOT_TOKEN` | токен бота от BotFather |
 | `CHANNEL_USERNAME` | канал, подписка на который проверяется (по умолчанию `@noroutine2026`) |
 | `CHANNEL_ID` | числовой ID канала — надёжнее ника, если проверка по юзернейму не сработает |
-| `ADMIN_CHAT_ID` | чат, куда приходят уведомления о заборе лид-магнита |
+| `ADMIN_CHAT_ID` | **необязательно.** ID вашего чата, куда приходят уведомления «лид-магнит забрали». Без него бот работает, просто не присылает уведомления |
 | `MATERIALS_PATH` | путь к ZIP (по умолчанию `materials/noroutine-n8n-pack.zip`) |
 | `EVENTS_LOG` | файл лога событий (по умолчанию `events.jsonl`) |
 
@@ -76,10 +94,27 @@ https://t.me/<bot_username>?start=vk         — из VK
 ### systemd
 
 ```bash
+sudo mkdir -p /opt/noroutine-growth
+sudo chown -R $USER /opt/noroutine-growth
+git clone https://github.com/personalartru/noroutine_growth.git /opt/noroutine-growth
+cd /opt/noroutine-growth
+python3 -m venv .venv && ./.venv/bin/pip install -r requirements.txt
+cp .env.example .env && nano .env        # токен BotFather, канал, ADMIN_CHAT_ID
 sudo cp deploy/noroutine-bot.service /etc/systemd/system/
 sudo systemctl enable --now noroutine-bot
+./.venv/bin/python bot.py --check
 journalctl -u noroutine-bot -f
 ```
+
+### Обновление бота
+
+```bash
+cd /opt/noroutine-growth && sudo bash deploy/deploy.sh
+```
+
+Скрипт делает `git pull`, обновляет зависимости, пересобирает лид-магнит,
+перезапускает сервис и печатает результат `--check`. После этого новые
+изменения в репозитории попадают в бота одной командой.
 
 ### Docker
 
@@ -91,6 +126,17 @@ docker run -d --name noroutine-bot --env-file .env -v "$PWD/materials:/app/mater
 Для продакшена вместо long polling можно переключиться на webhook
 (публичный HTTPS-домен), но long polling проще и для бота с десятками
 пользователей в сутки более чем достаточно.
+
+## Кто может обновлять бота
+
+Любой, у кого есть права на репозиторий `noroutine_growth`: правит код →
+пушит в `main` → на сервере выполняется `sudo bash deploy/deploy.sh` (или
+`systemctl restart noroutine-bot`, если лид-магнит не менялся).
+
+Если сервер доступен по SSH — деплой и перезапуск можно отдать ассистенту:
+достаточно добавить доступ (ключ) и указать путь `/opt/noroutine-growth`.
+CI в репозитории дополнительно проверяет, что архив лид-магнита совпадает
+с результатом `build_materials.py` (workflow `Check materials`).
 
 ## Лог событий
 

@@ -8,6 +8,7 @@ Type=simple
 User=noroutine
 WorkingDirectory=/opt/noroutine-growth
 EnvironmentFile=/opt/noroutine-growth/.env
+ExecStartPre=/opt/noroutine-growth/.venv/bin/python /opt/noroutine-growth/build_materials.py
 ExecStart=/opt/noroutine-growth/.venv/bin/python bot.py
 Restart=always
 RestartSec=5

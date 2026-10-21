@@ -39,12 +39,25 @@ TEXT_HELLO = (
 
 TEXT_AFTER_SUB = (
     "Готово, спасибо за подписку! Отправляю сборку шаблонов.\n\n"
-    "Если нужна связка под ваш конкретный процесс (а не готовый шаблон) — "
+    "Если нужна автоматизация под ваш конкретный процесс (а не готовый шаблон) — "
     "напишите, разберу и соберу под вас."
+)
+
+TEXT_REQUEST_SENT = (
+    "Принял запрос — передал Павел, он свяжется с вами.\n\n"
+    "Пока ждёте ответа: посмотрите архив выше — там воркфлоу, которые чаще всего "
+    "нужны первыми, и их можно развернуть сразу."
 )
 
 BTN_SUB = {"text": "Подписаться на канал", "url": f"https://t.me/{CHANNEL_USERNAME.lstrip('@')}"}
 BTN_CHECK = {"text": "Я подписался", "callback_data": "check_sub"}
+BTN_TASK = {"text": "Хочу такую же под свой процесс", "callback_data": "want_task"}
+
+TEXT_TASK_PROMPT = (
+    "Отлично. Опишите задачу одним сообщением: что сейчас делаете руками, "
+    "какими системами пользуетесь и сколько времени это занимает. "
+    "Передам Павел — он разберёт и предложит решение."
+)
 
 
 def api(method, **payload):
@@ -63,11 +76,14 @@ def send_message(chat_id, text, buttons=None, disable_web_page_preview=True):
                disable_web_page_preview=disable_web_page_preview)
 
 
-def send_document(chat_id, path, caption):
+def send_document(chat_id, path, caption, reply_markup=None):
+    data = {"chat_id": chat_id, "caption": caption}
+    if reply_markup:
+        data["reply_markup"] = json.dumps(reply_markup)
     with open(path, "rb") as f:
         r = requests.post(
             API.format(token=TOKEN, method="sendDocument"),
-            data={"chat_id": chat_id, "caption": caption},
+            data=data,
             files={"document": (os.path.basename(path), f, "application/zip")},
             timeout=180,
         )
@@ -104,6 +120,7 @@ def deliver_material(chat_id, source=None):
         chat_id,
         MATERIALS_PATH,
         "5 готовых n8n-воркфлоу — импорт в n8n за минуту. Гайд внутри архива.",
+        reply_markup={"inline_keyboard": [[BTN_TASK]]},
     )
     log_event(event="material_delivered", chat_id=chat_id, source=source)
     if ADMIN_CHAT_ID:
@@ -111,6 +128,37 @@ def deliver_material(chat_id, source=None):
             ADMIN_CHAT_ID,
             f"Лид-магнит забрали: chat_id={chat_id}, источник={source or 'unknown'}",
         )
+
+
+def forward_to_admin(user, text, source=None):
+    """Запрос от пользователя -> в чат администратора."""
+    user_id = user.get("id")
+    username = user.get("username")
+    first_name = user.get("first_name") or ""
+    link = f"https://t.me/{username}" if username else f"tg://user?id={user_id}"
+    who = f"{first_name} {('@' + username) if username else ''}".strip()
+
+    log_event(event="request", user_id=user_id, username=username,
+              first_name=first_name, source=source, text=text)
+
+    if not ADMIN_CHAT_ID:
+        print("Запрос сохранён в лог (ADMIN_CHAT_ID не задан):", text)
+        return False
+
+    message = (
+        "📩 Заявка из лид-бота\n"
+        f"Кто: {who or 'без имени'}\n"
+        f"user_id: {user_id}\n"
+        f"Источник: {source or 'unknown'}\n"
+        f"Ссылка для ответа: {link}\n\n"
+        f"Текст:\n{text}"
+    )
+    try:
+        send_message(ADMIN_CHAT_ID, message)
+        return True
+    except RuntimeError as e:
+        print("Не удалось переслать заявку:", e)
+        return False
 
 
 def handle_start(message):
@@ -144,6 +192,10 @@ def handle_start(message):
 def handle_callback(callback):
     chat_id = callback["message"]["chat"]["id"]
     user_id = callback["from"]["id"]
+    if callback.get("data") == "want_task":
+        api("answerCallbackQuery", callback_query_id=callback["id"])
+        send_message(chat_id, TEXT_TASK_PROMPT)
+        return
     if callback.get("data") == "check_sub":
         state = is_subscribed(user_id)
         if state:
@@ -171,7 +223,13 @@ def handle_text(message):
     elif text in ("/help", "/помощь"):
         send_message(chat_id, TEXT_HELLO)
     else:
-        send_message(chat_id, "Пришлите /start — выдам сборку шаблонов.")
+        source = (message.get("text") or "").strip()
+        delivered = forward_to_admin(user, source, source="bot")
+        if delivered:
+            send_message(chat_id, TEXT_REQUEST_SENT)
+        else:
+            send_message(chat_id, "Запрос принят, скоро свяжемся. "
+                                  "Для сбора шаблонов пришлите /start.")
 
 
 def test_delivery():

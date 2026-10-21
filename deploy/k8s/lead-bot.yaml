@@ -1,0 +1,70 @@
+# Постоянный запуск бота лид-магнита в кластере (вариант «сервер»).
+# Создать секрет с токеном бота:
+#   kubectl -n lead-bot create secret generic lead-bot-env \\
+#     --from-literal=TELEGRAM_BOT_TOKEN=123456:AA... \\
+#     --from-literal=CHANNEL_USERNAME=@noroutine2026 \\
+#     --from-literal=ADMIN_CHAT_ID=270479866
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: lead-bot
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: lead-bot-offset
+  namespace: lead-bot
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 64Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lead-bot
+  namespace: lead-bot
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: lead-bot
+  template:
+    metadata:
+      labels:
+        app: lead-bot
+    spec:
+      containers:
+        - name: bot
+          image: python:3.12-slim
+          workingDir: /app
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              apt-get update -qq && apt-get install -y -qq git >/dev/null
+              git clone --depth 1 https://github.com/personalartru/noroutine_growth.git /app
+              cd /app && python3 -m venv .venv && ./.venv/bin/pip install -q -r requirements.txt
+              ./.venv/bin/python build_materials.py
+              exec ./.venv/bin/python bot.py
+          envFrom:
+            - secretRef:
+                name: lead-bot-env
+          env:
+            - name: OFFSET_FILE
+              value: /data/.offset
+          volumeMounts:
+            - name: offset
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              memory: 192Mi
+      volumes:
+        - name: offset
+          persistentVolumeClaim:
+            claimName: lead-bot-offset

@@ -8,8 +8,13 @@ on:
         required: false
         default: "8"
         type: string
+  push:
+    branches: [main]
   schedule:
     - cron: "*/11 * * * *"
+
+permissions:
+  contents: read
 
 jobs:
   bot:

@@ -1,13 +1,17 @@
 """Лид-магнит и заявки в MAX-канале.
 
-Бот MAX (@noroutine_bot) администратор канала. Запускается в CI-цепочке
-и слушает обсуждение канала: если человек подписан на канал и просит
-материал — отдаёт ZIP, если пишет задачу — пересылает её владельцу.
+Бот MAX (@noroutine_bot) — администратор канала max.ru/channel_noroutine.
+Запускается в CI-цепочке и слушает обсуждение канала:
+
+- «/start» / «материал» → если человек подписан на канал, бот отдаёт ZIP
+  с 5 n8n-воркфлоу в личку; если нет — просит подписаться (кнопка);
+- любой другой текст → заявка: владельцу уходит уведомление с данными
+  пользователя, пользователю в личку — подтверждение и архив.
+  В канале бот не пишет никогда.
 
 Запуск: python max_lead.py [--minutes N]
 """
 import base64
-import json
 import os
 import sys
 import time
@@ -19,7 +23,7 @@ TOKEN = os.environ["MAX_BOT_TOKEN"]
 CHANNEL_ID = os.environ["MAX_CHANNEL_ID"]
 ADMIN_CHAT_ID = os.environ.get("MAX_ADMIN_CHAT_ID", "")
 MATERIALS_PATH = os.environ.get("MATERIALS_PATH", "materials/noroutine-n8n-pack.zip")
-RUN_MINUTES = float(os.environ.get("BOT_RUN_MINUTES", "8") or 8)
+RUN_MINUTES = float(os.environ.get("BOT_RUN_MINUTES", "16") or 16)
 OFFSET_FILE = os.environ.get("MAX_OFFSET_FILE", ".max_offset")
 
 TEXT_HELLO = (
@@ -45,18 +49,13 @@ TEXT_REQUEST_SENT = (
 
 TEXT_OPEN_BOT = (
     "Принял запрос и скоро мы с вами свяжемся!\n\n"
-    "Чтобы забрать архив с воркфлоу, откройте бот в личке: кнопка ниже."
+    "Чтобы забрать архив с воркфлоу, откройте бота в личке — кнопка ниже."
 )
+
+TEXT_PACK = "5 готовых n8n-воркфлоу — импорт в n8n за минуту. Гайд внутри архива."
 
 BTN_SUB = {"type": "link", "text": "Подписаться на канал", "url": "https://max.ru/channel_noroutine"}
-BTN_TASK = {"type": "callback", "text": "Хочу такую же под свой процесс", "action": "want_task"}
 BTN_OPEN = {"type": "link", "text": "Открыть бота", "url": "https://max.ru/noroutine_bot"}
-
-TEXT_TASK_PROMPT = (
-    "Отлично. Опишите задачу одним сообщением: что сейчас делаете руками, "
-    "какими системами пользуетесь и сколько времени это занимает. "
-    "Передам Павел — он разберёт и предложит решение."
-)
 
 
 def call(method, path, query=None, body=None):
@@ -73,26 +72,16 @@ def call(method, path, query=None, body=None):
     return r.json()
 
 
-def send_message(chat_id, text, buttons=None):
-    body = {"text": text, "format": "html", "notify": True}
-    if buttons:
-        body["attachments"] = [{
-            "type": "inline_keyboard",
-            "payload": {"buttons": [buttons]},
-        }]
-    return call("POST", "messages", query={"chat_id": chat_id}, body=body)
-
-
 def send_direct(user_id, text, file_token=None, buttons=None):
-    """Личное сообщение пользователю: chat_id в MAX = user_id."""
+    """Личное сообщение пользователю: в MAX chat_id диалога = user_id."""
     body = {"text": text, "format": "html", "notify": True}
+    attachments = []
     if file_token:
-        body["attachments"] = [{"type": "file", "payload": {"token": file_token}}]
+        attachments.append({"type": "file", "payload": {"token": file_token}})
     if buttons:
-        body.setdefault("attachments", []).append({
-            "type": "inline_keyboard",
-            "payload": {"buttons": [buttons]},
-        })
+        attachments.append({"type": "inline_keyboard", "payload": {"buttons": [buttons]}})
+    if attachments:
+        body["attachments"] = attachments
     try:
         call("POST", "messages", query={"chat_id": user_id}, body=body)
         print("Отправлено в личку:", user_id)
@@ -105,7 +94,11 @@ def send_direct(user_id, text, file_token=None, buttons=None):
 def notify_in_chat(chat_id, text, buttons=None):
     """Запасной вариант: сообщение в чат обсуждения (в канал не пишем)."""
     try:
-        send_message(chat_id, text, buttons)
+        body = {"text": text, "format": "html", "notify": True}
+        if buttons:
+            body["attachments"] = [{"type": "inline_keyboard", "payload": {"buttons": [buttons]}}]
+        call("POST", "messages", query={"chat_id": chat_id}, body=body)
+        print("Ответ в чат обсуждения:", chat_id)
         return True
     except RuntimeError as e:
         print("Не удалось ответить в чат:", e)
@@ -113,37 +106,32 @@ def notify_in_chat(chat_id, text, buttons=None):
 
 
 def upload_pack():
-    """Два варианта загрузки: сразу с токеном или через upload-URL."""
-    with open(MATERIALS_PATH, "rb") as f:
-        r = requests.post(
-            f"{MAX_API}/uploads",
-            params={"type": "file"},
-            headers={"Authorization": TOKEN},
-            files={"file": (os.path.basename(MATERIALS_PATH), f, "application/zip")},
-            timeout=180,
-        )
+    """Загрузка файла в MAX: два шага (проверено на живом API).
+
+    1) POST /uploads?type=file -> {"url": ...}
+    2) POST файла на этот url (multipart, поле data) -> {"fileId", "token"}
+    Токен из шага 2 подставляется в attachments.payload.token.
+    """
+    r = requests.post(f"{MAX_API}/uploads", params={"type": "file"},
+                      headers={"Authorization": TOKEN}, timeout=60)
     if r.status_code != 200:
         raise RuntimeError(f"uploads: HTTP {r.status_code} {r.text[:200]}")
     data = r.json()
-    print("uploads ->", str(data)[:300])
     token = data.get("token") or (data.get("result") or {}).get("token")
     if token:
         return token
 
     upload_url = data.get("url")
     if not upload_url:
-        raise RuntimeError(f"MAX не вернул токен файла: {str(data)[:200]}")
+        raise RuntimeError(f"MAX не вернул url для загрузки: {str(data)[:200]}")
+
     with open(MATERIALS_PATH, "rb") as f:
-        r2 = requests.post(
-            upload_url,
-            headers={"Authorization": TOKEN},
-            files={"data": (os.path.basename(MATERIALS_PATH), f, "application/zip")},
-            timeout=180,
-        )
+        r2 = requests.post(upload_url, headers={"Authorization": TOKEN},
+                           files={"data": (os.path.basename(MATERIALS_PATH), f, "application/zip")},
+                           timeout=180)
     if r2.status_code != 200:
         raise RuntimeError(f"upload url: HTTP {r2.status_code} {r2.text[:200]}")
     data2 = r2.json()
-    print("upload-url ->", str(data2)[:300])
     token = (data2.get("token") or (data2.get("result") or {}).get("token")
              or data.get("token") or (data.get("result") or {}).get("token"))
     if not token:
@@ -154,14 +142,16 @@ def upload_pack():
 def send_pack(user_id, chat_id=None):
     """Выдаёт архив: сперва в личку, при неудаче — в чат обсуждения."""
     token = upload_pack()
-    text = "5 готовых n8n-воркфлоу — импорт в n8n за минуту. Гайд внутри архива."
-    if send_direct(user_id, text, file_token=token):
+    if send_direct(user_id, TEXT_PACK, file_token=token):
         return True
     if chat_id:
-        body = {"text": text, "format": "html", "notify": True,
-                "attachments": [{"type": "file", "payload": {"token": token}}]}
         try:
-            call("POST", "messages", query={"chat_id": chat_id}, body=body)
+            call("POST", "messages", query={"chat_id": chat_id}, body={
+                "text": TEXT_PACK,
+                "format": "html",
+                "notify": True,
+                "attachments": [{"type": "file", "payload": {"token": token}}],
+            })
             print("Архив отправлен в чат:", chat_id)
             return True
         except RuntimeError as e:
@@ -170,7 +160,7 @@ def send_pack(user_id, chat_id=None):
 
 
 def is_subscribed(user_id):
-    """Статус пользователя в канале: подписчик — получит материал."""
+    """Статус пользователя в канале: подписчик получит материал."""
     for target in (CHANNEL_ID, f"-{CHANNEL_ID.lstrip('-')}"):
         try:
             member = call("GET", f"chats/{target}/members/{user_id}")
@@ -182,23 +172,25 @@ def is_subscribed(user_id):
 
 
 def forward_to_admin(user_id, name, text, username=None):
-    link = f"https://max.ru/u/{user_id}" if user_id else ""
-    who = f"{name or 'без имени'}"
+    """Уведомление владельцу: кто, id, профиль и текст запроса."""
+    who = name or "без имени"
     if username:
         who += f" (@{username})"
     message = (
         "📩 Заявка из MAX-канала\n"
         f"Кто: {who}\n"
         f"user_id: {user_id}\n"
-        f"Ссылка на профиль: {link}\n\n"
+        f"Ссылка на профиль: https://max.ru/u/{user_id}\n\n"
         f"Текст запроса:\n{text}\n\n"
-        "Ответьте ему в личку MAX: откройте профиль выше и напишите."
+        "Ответьте ему в личку MAX: откройте профиль и напишите."
     )
     if not ADMIN_CHAT_ID:
         print("MAX_ADMIN_CHAT_ID не задан — заявка только в лог")
         return False
     try:
-        send_message(ADMIN_CHAT_ID, message)
+        call("POST", "messages", query={"chat_id": ADMIN_CHAT_ID},
+             body={"text": message, "format": "html", "notify": True})
+        print("Заявка отправлена владельцу")
         return True
     except RuntimeError as e:
         print("Не удалось переслать заявку:", e)
@@ -234,22 +226,20 @@ def handle_event(event):
     user_id = sender.get("user_id")
     name = sender.get("name") or sender.get("first_name") or ""
     username = sender.get("username")
-    print(f"событие {kind} | chat_type {chat_type} | post_id(b64) "
-          f"{base64.b64encode(str(post_id).encode()).decode()} | chat_id(b64) "
-          f"{base64.b64encode(str(chat_id).encode()).decode()} | "
-          f"user {user_id} | текст: {text[:60]!r}")
+
+    print(f"событие {kind} | chat_type {chat_type} | user {user_id} | "
+          f"post_id(b64) {base64.b64encode(str(post_id).encode()).decode()} | "
+          f"текст: {text[:60]!r}")
     if not text:
         return
 
     lowered = text.lower()
-    if lowered in ("/start", "старт", "начать", "материал", "/материал", "связки", "шаблоны"):
-        state = is_subscribed(user_id)
-        if state:
+    if lowered in ("/start", "старт", "начать", "материал", "/материал", "связки", "шаблоны", "воркфлоу"):
+        if is_subscribed(user_id):
             send_direct(user_id, TEXT_AFTER_SUB)
             send_pack(user_id, chat_id)
-        else:
-            send_direct(user_id, TEXT_HELLO, buttons=BTN_SUB) or \
-                notify_in_chat(chat_id, TEXT_HELLO, buttons=BTN_SUB)
+        elif not send_direct(user_id, TEXT_HELLO, buttons=BTN_SUB):
+            notify_in_chat(chat_id, TEXT_HELLO, buttons=BTN_SUB)
         return
 
     if forward_to_admin(user_id, name, text, username):
@@ -261,8 +251,7 @@ def handle_event(event):
         if not send_direct(user_id, TEXT_REQUEST_SENT, file_token=token):
             notify_in_chat(chat_id, TEXT_OPEN_BOT, buttons=BTN_OPEN)
     else:
-        send_direct(user_id, "Запрос принят, скоро свяжемся.") or \
-            notify_in_chat(chat_id, "Запрос принят, скоро свяжемся.")
+        send_direct(user_id, "Запрос принят, скоро свяжемся.")
 
 
 def main():

@@ -2,3 +2,4 @@
 .env
 events.jsonl
 __pycache__/
+.env.k8s

@@ -1,5 +1,6 @@
 {
   "name": "04 AI-комментарии к задачам в Трекере",
+  "core": false,
   "nodes": [
     {
       "parameters": {

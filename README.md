@@ -3,7 +3,7 @@
 Репозиторий закрывает две механики роста Telegram-канала `@noroutine2026`:
 
 1. **Лид-магнит + бот.** Человек переходит по ссылке-диплинку, подписывается на
-   канал, получает ZIP с 10 готовыми n8n-свяблонами. Источник перехода
+   канал, получает ZIP с 5 готовыми n8n-воркфлоу. Источник перехода
    фиксируется (`?start=site`, `?start=rutube`, `?start=youtube`…), так что видно,
    какой канал приводит подписчиков.
 2. **Growth-материалы.** Текст закреплённого поста, список чатов и партнёрских
@@ -13,7 +13,7 @@
 
 ```
 bot.py                 бот выдачи лид-магнита (long polling, только requests)
-build_materials.py     генератор 10 n8n-шаблонов + сборка ZIP
+build_materials.py     генератор 5 основных + 5 бонусных n8n-воркфлоу + сборка ZIP
 materials/             готовый лид-магнит (README + workflows/ + functions/)
 growth/                pinned_post.md, chats_and_partners.md, commenting_templates.md
 deploy/                systemd-юнит и Dockerfile

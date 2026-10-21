@@ -1,5 +1,6 @@
 {
   "name": "09 REST API: лид с валидацией и записью",
+  "core": false,
   "nodes": [
     {
       "parameters": {

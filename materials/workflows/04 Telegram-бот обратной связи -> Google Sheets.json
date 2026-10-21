@@ -1,5 +1,6 @@
 {
   "name": "06 Telegram-бот обратной связи -> Google Sheets",
+  "core": true,
   "nodes": [
     {
       "parameters": {

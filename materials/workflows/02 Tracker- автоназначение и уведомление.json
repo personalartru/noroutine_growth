@@ -1,5 +1,6 @@
 {
   "name": "02 Tracker: автоназначение и уведомление",
+  "core": true,
   "nodes": [
     {
       "parameters": {

@@ -1,5 +1,6 @@
 {
   "name": "01 Tracker: вебхук -> новая задача",
+  "core": true,
   "nodes": [
     {
       "parameters": {

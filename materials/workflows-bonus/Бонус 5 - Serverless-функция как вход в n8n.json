@@ -1,5 +1,6 @@
 {
   "name": "10 Serverless-функция как вход в n8n",
+  "core": false,
   "nodes": [
     {
       "parameters": {

@@ -1,15 +1,17 @@
-"""Сборка лид-магнита: 10 n8n-шаблонов + гайд -> ZIP для выдачи в Telegram-боте.
+"""Сборка лид-магнита: 5 основных n8n-воркфлоу + 5 бонусных + гайд -> ZIP.
 
 Запуск: python build_materials.py
 Результат: materials/noroutine-n8n-pack.zip
 """
 import json
 import os
+import re
 import zipfile
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 OUT_DIR = os.path.join(BASE_DIR, "materials")
 WF_DIR = os.path.join(OUT_DIR, "workflows")
+BONUS_DIR = os.path.join(OUT_DIR, "workflows-bonus")
 
 TRACKER = "https://api.tracker.yandex.net"
 SHEETS = "https://sheets.googleapis.com/v4/spreadsheets"
@@ -44,9 +46,10 @@ class Builder:
         for a, b in zip(names, names[1:]):
             self.link(a, b)
 
-    def dump(self, name, tags):
+    def dump(self, name, tags, core=False):
         return {
             "name": name,
+            "core": core,
             "nodes": self.nodes,
             "connections": self.connections,
             "active": False,
@@ -108,7 +111,7 @@ def build_workflows():
         "options": {"responseCode": 200},
     }, [660, 0], 1.1)
     b.flow(["Webhook", "Собрать задачу", "Создать задачу", "Ответ"])
-    wfs.append(b.dump("01 Tracker: вебхук -> новая задача", ["Трекер", "webhook"]))
+    wfs.append(b.dump("01 Tracker: вебхук -> новая задача", ["Трекер", "webhook"], core=True))
 
     # 2. Смена статуса -> автоназначение исполнителя -> уведомление в Telegram
     b = Builder()
@@ -146,7 +149,7 @@ def build_workflows():
         "respondWith": "json", "responseBody": "={{ { ok: true } }}", "options": {"responseCode": 200},
     }, [880, 0], 1.1)
     b.flow(["Webhook статуса", "Данные задачи", "Назначить ответственного", "Уведомить в Telegram", "Ответ"])
-    wfs.append(b.dump("02 Tracker: автоназначение и уведомление", ["Трекер", "Telegram"]))
+    wfs.append(b.dump("02 Tracker: автоназначение и уведомление", ["Трекер", "Telegram"], core=True))
 
     # 3. Яндекс Формы -> задачи в Трекере
     b = Builder()
@@ -184,7 +187,7 @@ def build_workflows():
         "respondWith": "json", "responseBody": "={{ { ok: true, key: $json.key } }}", "options": {"responseCode": 201},
     }, [660, 0], 1.1)
     b.flow(["Webhook формы", "Разобрать ответы", "Создать задачу", "Ответ"])
-    wfs.append(b.dump("03 Яндекс Формы -> задачи в Трекере", ["Трекер", "Формы"]))
+    wfs.append(b.dump("03 Яндекс Формы -> задачи в Трекере", ["Трекер", "Формы"], core=True))
 
     # 4. AI-комментарий к задаче + отчёт в Telegram
     b = Builder()
@@ -343,7 +346,7 @@ def build_workflows():
     b.link("Валидация", "Записать заявку", 0)
     b.link("Записать заявку", "Ответить в чат")
     b.link("Валидация", "Ответить «пусто»", 1)
-    wfs.append(b.dump("06 Telegram-бот обратной связи -> Google Sheets", ["Telegram", "Google Sheets"]))
+    wfs.append(b.dump("06 Telegram-бот обратной связи -> Google Sheets", ["Telegram", "Google Sheets"], core=True))
 
     # 7. MAX-бот: сообщения -> Google Sheets
     b = Builder()
@@ -393,7 +396,7 @@ def build_workflows():
         "respondWith": "json", "responseBody": "={{ { ok: true } }}", "options": {"responseCode": 200},
     }, [880, 0], 1.1)
     b.flow(["Webhook MAX", "Разобрать сообщение", "Записать в таблицу", "Ответ в MAX", "Ответ на вебхук"])
-    wfs.append(b.dump("07 MAX-бот: заявки в Google Sheets", ["MAX", "Google Sheets"]))
+    wfs.append(b.dump("07 MAX-бот: заявки в Google Sheets", ["MAX", "Google Sheets"], core=True))
 
     # 8. Ежедневный отчёт: Google Sheets -> Telegram
     b = Builder()
@@ -499,12 +502,13 @@ def build_workflows():
     return wfs
 
 
-README = """# 10 готовых n8n-связок для рутины
+README = """# 5 готовых n8n-воркфлоу для рутины
 
-Набор шаблонов, которые закрывают самые частые ручные процессы в digital и
-проектном управлении: заявки из форм, задачи в Яндекс Трекере, статусы,
-AI-комментарии, выгрузка в Google Sheets, боты обратной связи в Telegram и
-MAX, ежедневные отчёты и REST-приём лидов.
+Пять воркфлоу, которые закрывают самые частые ручные процессы в digital и
+проектном управлении: заявки из форм, задачи в Яндекс Трекере, статусы и
+автоназначение, боты обратной связи в Telegram и MAX, выгрузка в таблицу.
+В папке `workflows-bonus/` — ещё пять: AI-комментарии, ежедневный отчёт,
+REST-приём лидов и serverless-обработчик.
 
 ## Как импортировать
 
@@ -526,7 +530,7 @@ MAX, ежедневные отчёты и REST-приём лидов.
 | `N8N_WEBHOOK_URL` | production-webhook URL для serverless-функции |
 | `WEBHOOK_SECRET` | подпись для проверки входящих вебхуков |
 
-## Шаблоны
+## Основные воркфлоу (5)
 
 1. **Tracker: вебхук -> новая задача** — приём заявки с сайта и создание задачи.
 2. **Tracker: автоназначение и уведомление** — смена статуса -> ответственный + Telegram.
@@ -539,6 +543,9 @@ MAX, ежедневные отчёты и REST-приём лидов.
 9. **REST API: лид с валидацией** — приём лидов с проверкой email и кодом 400.
 10. **Serverless-функция как вход в n8n** — облачная функция проксирует вебхуки в n8n.
 
+Пункты 4–10 лежат в папке `workflows-bonus/` — они не входят в основные пять,
+но доступны, если захочется продолжить.
+
 ## Бонус: serverless-обработчик
 
 В папке `functions/` лежит обработчик для Yandex Cloud Functions (Python), который
@@ -546,7 +553,7 @@ MAX, ежедневные отчёты и REST-приём лидов.
 
 ## Что дальше
 
-Каждая связка из набора — готовая основа под внедрение. Если нужен разбор под
+Каждый воркфлоу — готовая основа под внедрение. Если нужен разбор под
 ваши процессы (а не шаблон из интернета) — напишите: разберу ваш процесс и
 соберу связку под него. https://t.me/noroutine2026
 """
@@ -560,9 +567,21 @@ def safe_name(name):
 
 def write_all():
     os.makedirs(WF_DIR, exist_ok=True)
+    os.makedirs(BONUS_DIR, exist_ok=True)
     workflows = build_workflows()
+    core_index = 0
+    bonus_index = 0
     for wf in workflows:
-        path = os.path.join(WF_DIR, safe_name(wf["name"]) + ".json")
+        base = re.sub(r"^\d+\s*", "", wf["name"])
+        if wf.get("core"):
+            core_index += 1
+            target = WF_DIR
+            filename = f"{core_index:02d} {safe_name(base)}.json"
+        else:
+            bonus_index += 1
+            target = BONUS_DIR
+            filename = f"Бонус {bonus_index} - {safe_name(base)}.json"
+        path = os.path.join(target, filename)
         with open(path, "w", encoding="utf-8") as f:
             json.dump(wf, f, ensure_ascii=False, indent=2)
     with open(os.path.join(OUT_DIR, "README.md"), "w", encoding="utf-8") as f:
@@ -610,9 +629,12 @@ def handler(event, context):
         z.write(os.path.join(OUT_DIR, "README.md"), "README.md")
         for name in sorted(os.listdir(WF_DIR)):
             z.write(os.path.join(WF_DIR, name), f"workflows/{name}")
+        for name in sorted(os.listdir(BONUS_DIR)):
+            z.write(os.path.join(BONUS_DIR, name), f"workflows-bonus/{name}")
         for name in sorted(os.listdir(fn_dir)):
             z.write(os.path.join(fn_dir, name), f"functions/{name}")
-    print("Собрано:", zip_path, os.path.getsize(zip_path), "байт,", len(workflows), "шаблонов")
+    core = sum(1 for w in workflows if w.get("core"))
+    print("Собрано:", zip_path, os.path.getsize(zip_path), "байт,", core, "основных +", len(workflows) - core, "бонусных")
 
 
 if __name__ == "__main__":

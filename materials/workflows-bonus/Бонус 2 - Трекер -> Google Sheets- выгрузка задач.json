@@ -1,5 +1,6 @@
 {
   "name": "05 Трекер -> Google Sheets: выгрузка задач",
+  "core": false,
   "nodes": [
     {
       "parameters": {

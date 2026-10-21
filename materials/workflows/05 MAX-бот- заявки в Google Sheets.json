@@ -1,5 +1,6 @@
 {
   "name": "07 MAX-бот: заявки в Google Sheets",
+  "core": true,
   "nodes": [
     {
       "parameters": {

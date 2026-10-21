@@ -1,5 +1,6 @@
 {
   "name": "08 Ежедневный отчёт: Sheets -> Telegram",
+  "core": false,
   "nodes": [
     {
       "parameters": {

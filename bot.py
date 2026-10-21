@@ -27,7 +27,7 @@ POLL_TIMEOUT = int(os.environ.get("POLL_TIMEOUT", "25"))
 TEXT_HELLO = (
     "Привет! Это бот канала «No ! Routine» — про автоматизацию рутины в "
     "проектном управлении и digital.\n\n"
-    "Внутри — 10 готовых n8n-связок, которые закрывают типовую рутину:\n"
+    "Внутри — 5 готовых n8n-воркфлоу, которые закрывают типовую рутину:\n"
     "заявки из форм, задачи в Яндекс Трекере, статусы, AI-комментарии, "
     "выгрузка в Google Sheets, боты обратной связи в Telegram и MAX, "
     "ежедневные отчёты и приём лидов по REST.\n\n"
@@ -93,7 +93,7 @@ def deliver_material(chat_id, source=None):
     send_document(
         chat_id,
         MATERIALS_PATH,
-        "10 готовых n8n-связок — импорт в n8n за минуту. Гайд внутри архива.",
+        "5 готовых n8n-воркфлоу — импорт в n8n за минуту. Гайд внутри архива.",
     )
     log_event(event="material_delivered", chat_id=chat_id, source=source)
     if ADMIN_CHAT_ID:

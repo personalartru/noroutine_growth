@@ -552,11 +552,17 @@ MAX, ежедневные отчёты и REST-приём лидов.
 """
 
 
+def safe_name(name):
+    for ch in ':→':
+        name = name.replace(ch, "-")
+    return name.replace("  ", " ").strip()
+
+
 def write_all():
     os.makedirs(WF_DIR, exist_ok=True)
     workflows = build_workflows()
     for wf in workflows:
-        path = os.path.join(WF_DIR, wf["name"] + ".json")
+        path = os.path.join(WF_DIR, safe_name(wf["name"]) + ".json")
         with open(path, "w", encoding="utf-8") as f:
             json.dump(wf, f, ensure_ascii=False, indent=2)
     with open(os.path.join(OUT_DIR, "README.md"), "w", encoding="utf-8") as f:

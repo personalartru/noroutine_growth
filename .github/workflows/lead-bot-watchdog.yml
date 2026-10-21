@@ -1,0 +1,62 @@
+name: Lead bot watchdog
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Проверить свежесть запусков бота
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.LEAD_BOT_TOKEN }}
+          LEAD_ADMIN_CHAT_ID: ${{ secrets.LEAD_ADMIN_CHAT_ID }}
+        run: |
+          set -euo pipefail
+          WORKFLOW="Run lead bot (GitHub Actions)"
+          LIMIT_MIN=25
+
+          last=$(gh run list --workflow "$WORKFLOW" --limit 1 \
+            --json status,conclusion,createdAt \
+            --jq '.[0] | "\(.createdAt) \(.status) \(.conclusion)"' || true)
+          echo "Последний запуск: ${last:-нет}"
+
+          if [[ -z "${last:-}" ]]; then
+            age=9999
+          else
+            created=$(echo "$last" | cut -d' ' -f1)
+            age=$(python3 - "$created" <<'PYEOF'
+import datetime, sys
+created = sys.argv[1]
+dt = datetime.datetime.strptime(created, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
+now = datetime.datetime.now(datetime.timezone.utc)
+print(int((now - dt).total_seconds() // 60))
+PYEOF
+)
+          fi
+          echo "Возраст последнего запуска: ${age} мин"
+
+          if [[ $age -gt $LIMIT_MIN ]]; then
+            echo "Бот молчит дольше ${LIMIT_MIN} минут — перезапускаю"
+            gh workflow run "$WORKFLOW" --ref "${{ github.ref_name }}" \
+              -f minutes=9 || echo "не удалось запустить"
+            if [[ -n "${TELEGRAM_BOT_TOKEN:-}" && -n "${LEAD_ADMIN_CHAT_ID:-}" ]]; then
+              curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+                --data-urlencode "chat_id=${LEAD_ADMIN_CHAT_ID}" \
+                --data-urlencode "text=Сторож: бот не работал ${age} минут — я его перезапустил." \
+                >/dev/null || true
+            fi
+            echo "restarted=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Бот жив, перезапуск не нужен"
+            echo "restarted=false" >> "$GITHUB_OUTPUT"
+          fi

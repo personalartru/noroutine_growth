@@ -25,6 +25,8 @@ ADMIN_CHAT_ID = os.environ.get("MAX_ADMIN_CHAT_ID", "")
 MATERIALS_PATH = os.environ.get("MATERIALS_PATH", "materials/noroutine-n8n-pack.zip")
 RUN_MINUTES = float(os.environ.get("BOT_RUN_MINUTES", "16") or 16)
 OFFSET_FILE = os.environ.get("MAX_OFFSET_FILE", ".max_offset")
+PENDING_FILE = os.environ.get("MAX_PENDING_FILE", ".max_pending.json")
+BOT_USERNAME = os.environ.get("MAX_BOT_USERNAME", "")
 
 TEXT_HELLO = (
     "Привет! Это бот канала «No ! Routine» — про автоматизацию рутины "
@@ -47,15 +49,31 @@ TEXT_REQUEST_SENT = (
     "всего нужны первыми, и их можно развернуть сразу."
 )
 
-TEXT_OPEN_BOT = (
-    "Принял запрос и скоро мы с вами свяжемся!\n\n"
-    "Чтобы забрать архив с воркфлоу, откройте бота в личке — кнопка ниже."
-)
+TEXT_OPEN_BOT = "Откройте бота, чтобы получить архив и ответ по запросу 👇"
 
 TEXT_PACK = "5 готовых n8n-воркфлоу — импорт в n8n за минуту. Гайд внутри архива."
 
 BTN_SUB = {"type": "link", "text": "Подписаться на канал", "url": "https://max.ru/channel_noroutine"}
-BTN_OPEN = {"type": "link", "text": "Открыть бота", "url": "https://max.ru/noroutine_bot"}
+
+
+def bot_username():
+    """Юзернейм бота для диплинков (технический, как в /me)."""
+    global BOT_USERNAME
+    if not BOT_USERNAME:
+        try:
+            BOT_USERNAME = (call("GET", "me") or {}).get("username") or ""
+        except RuntimeError:
+            BOT_USERNAME = "noroutine_bot"
+    return BOT_USERNAME
+
+
+def bot_link(payload=""):
+    link = f"https://max.ru/{bot_username()}"
+    return f"{link}?start={payload}" if payload else link
+
+
+def open_bot_button():
+    return {"type": "link", "text": "Открыть бота и забрать архив", "url": bot_link("lead")}
 
 
 def call(method, path, query=None, body=None):
@@ -72,7 +90,7 @@ def call(method, path, query=None, body=None):
     return r.json()
 
 
-def send_direct(user_id, text, file_token=None, buttons=None):
+def send_direct(user_id, text, file_token=None, buttons=None, fallback_chat_id=None):
     """Личное сообщение пользователю: в MAX chat_id диалога = user_id."""
     body = {"text": text, "format": "html", "notify": True}
     attachments = []
@@ -82,13 +100,18 @@ def send_direct(user_id, text, file_token=None, buttons=None):
         attachments.append({"type": "inline_keyboard", "payload": {"buttons": [buttons]}})
     if attachments:
         body["attachments"] = attachments
-    try:
-        call("POST", "messages", query={"chat_id": user_id}, body=body)
-        print("Отправлено в личку:", user_id)
-        return True
-    except RuntimeError as e:
-        print("Личка недоступна:", e)
-        return False
+
+    targets = [user_id]
+    if fallback_chat_id and fallback_chat_id != user_id:
+        targets.append(fallback_chat_id)
+    for target in targets:
+        try:
+            call("POST", "messages", query={"chat_id": target}, body=body)
+            print("Отправлено в личку:", target)
+            return True
+        except RuntimeError as e:
+            print(f"Личка недоступна ({target}):", e)
+    return False
 
 
 def notify_in_chat(chat_id, text, buttons=None):
@@ -142,7 +165,7 @@ def upload_pack():
 def send_pack(user_id, chat_id=None):
     """Выдаёт архив: сперва в личку, при неудаче — в чат обсуждения."""
     token = upload_pack()
-    if send_direct(user_id, TEXT_PACK, file_token=token):
+    if send_direct(user_id, TEXT_PACK, file_token=token, fallback_chat_id=chat_id):
         return True
     if chat_id:
         try:
@@ -197,6 +220,24 @@ def forward_to_admin(user_id, name, text, username=None):
         return False
 
 
+def load_pending():
+    import json as _json
+    try:
+        with open(PENDING_FILE, encoding="utf-8") as f:
+            return _json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def save_pending(pending):
+    import json as _json
+    try:
+        with open(PENDING_FILE, "w", encoding="utf-8") as f:
+            _json.dump(pending, f, ensure_ascii=False, indent=2)
+    except OSError as e:
+        print("Не удалось сохранить состояние заявок:", e)
+
+
 def load_offset():
     try:
         with open(OFFSET_FILE, encoding="utf-8") as f:
@@ -213,8 +254,31 @@ def save_offset(offset):
         pass
 
 
+def handle_bot_started(event):
+    """Пользователь открыл бота по диплинку: отдаём архив в личку."""
+    user = event.get("user") or {}
+    user_id = user.get("user_id")
+    chat_id = event.get("chat_id") or user_id
+    payload = event.get("payload")
+    print("bot_started | user", user_id, "| payload", payload)
+
+    pending = load_pending()
+    request = pending.pop(str(user_id), None)
+    save_pending(pending)
+
+    if request:
+        send_direct(user_id, TEXT_REQUEST_SENT, fallback_chat_id=chat_id)
+        send_pack(user_id, chat_id)
+    else:
+        send_direct(user_id, TEXT_AFTER_SUB, fallback_chat_id=chat_id)
+        send_pack(user_id, chat_id)
+
+
 def handle_event(event):
     kind = event.get("update_type") or event.get("type")
+    if kind == "bot_started":
+        handle_bot_started(event)
+        return
     message = event.get("message") or {}
     body = message.get("body") or {}
     text = (body.get("text") or "").strip()
@@ -235,6 +299,9 @@ def handle_event(event):
 
     lowered = text.lower()
     if lowered in ("/start", "старт", "начать", "материал", "/материал", "связки", "шаблоны", "воркфлоу"):
+        pending = load_pending()
+        request = pending.pop(str(user_id), None)
+        save_pending(pending)
         if is_subscribed(user_id):
             send_direct(user_id, TEXT_AFTER_SUB)
             send_pack(user_id, chat_id)
@@ -243,13 +310,21 @@ def handle_event(event):
         return
 
     if forward_to_admin(user_id, name, text, username):
+        pending = load_pending()
+        pending[str(user_id)] = {"text": text, "name": name, "username": username}
+        save_pending(pending)
+
         token = None
         try:
             token = upload_pack()
         except RuntimeError as e:
             print("Не удалось загрузить архив:", e)
+
         if not send_direct(user_id, TEXT_REQUEST_SENT, file_token=token):
-            notify_in_chat(chat_id, TEXT_OPEN_BOT, buttons=BTN_OPEN)
+            # личка недоступна: пользователь не запускал бота.
+            # Оставляем кнопку с диплинком — жмёт и попадает в диалог.
+            print("Личка недоступна, предлагаю открыть бота")
+            notify_in_chat(chat_id, TEXT_OPEN_BOT, buttons=open_bot_button())
     else:
         send_direct(user_id, "Запрос принят, скоро свяжемся.")
 

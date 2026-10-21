@@ -46,6 +46,7 @@ jobs:
           path: |
             .offset
             .max_offset
+            .max_pending.json
           key: lead-bot-offset-${{ github.run_id }}
           restore-keys: lead-bot-offset-
       - name: Проверить загрузку файла в MAX
@@ -83,6 +84,7 @@ jobs:
           path: |
             .offset
             .max_offset
+            .max_pending.json
           key: lead-bot-offset-${{ github.run_id }}
       - name: Поставить в очередь следующий цикл
         if: always()

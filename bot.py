@@ -60,6 +60,19 @@ def send_message(chat_id, text, buttons=None, disable_web_page_preview=True):
                disable_web_page_preview=disable_web_page_preview)
 
 
+def send_document(chat_id, path, caption):
+    with open(path, "rb") as f:
+        r = requests.post(
+            API.format(token=TOKEN, method="sendDocument"),
+            data={"chat_id": chat_id, "caption": caption},
+            files={"document": (os.path.basename(path), f, "application/zip")},
+            timeout=180,
+        )
+    if r.status_code != 200:
+        raise RuntimeError(f"sendDocument: HTTP {r.status_code} {r.text[:200]}")
+    return r.json().get("result")
+
+
 def log_event(**fields):
     fields["ts"] = datetime.now(timezone.utc).isoformat()
     with open(EVENTS_LOG, "a", encoding="utf-8") as f:
@@ -77,9 +90,11 @@ def is_subscribed(user_id):
 
 
 def deliver_material(chat_id, source=None):
-    with open(MATERIALS_PATH, "rb") as f:
-        api("sendDocument", chat_id=chat_id, document=f,
-            caption="10 готовых n8n-связок — импорт в n8n за минуту. Гайд внутри архива.")
+    send_document(
+        chat_id,
+        MATERIALS_PATH,
+        "10 готовых n8n-связок — импорт в n8n за минуту. Гайд внутри архива.",
+    )
     log_event(event="material_delivered", chat_id=chat_id, source=source)
     if ADMIN_CHAT_ID:
         send_message(

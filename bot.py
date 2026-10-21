@@ -24,6 +24,8 @@ ADMIN_CHAT_ID = os.environ.get("ADMIN_CHAT_ID", "")
 MATERIALS_PATH = os.environ.get("MATERIALS_PATH", "materials/noroutine-n8n-pack.zip")
 EVENTS_LOG = os.environ.get("EVENTS_LOG", "events.jsonl")
 POLL_TIMEOUT = int(os.environ.get("POLL_TIMEOUT", "25"))
+OFFSET_FILE = os.environ.get("OFFSET_FILE", ".offset")
+RUN_MINUTES = float(os.environ.get("BOT_RUN_MINUTES", "0") or 0)
 
 TEXT_HELLO = (
     "Привет! Это бот канала «No ! Routine» — про автоматизацию рутины в "
@@ -172,6 +174,22 @@ def handle_text(message):
         send_message(chat_id, "Пришлите /start — выдам сборку шаблонов.")
 
 
+def test_delivery():
+    """Сквозная проверка: бот -> проверка подписки -> отправка архива."""
+    me = api("getMe")
+    print("Бот:", f"@{me.get('username')}")
+    if not ADMIN_CHAT_ID:
+        print("Не задан ADMIN_CHAT_ID — не знаю, кому отправить архив.")
+        return
+    state = is_subscribed(ADMIN_CHAT_ID)
+    print("Подписка ADMIN_CHAT_ID:", state if state is not None else f"не проверена ({LAST_CHECK_ERROR})")
+    if state is False:
+        print("Аккаунт не подписан на канал — архив не отправлю.")
+        return
+    deliver_material(ADMIN_CHAT_ID, "ci-test")
+    print("Архив отправлен в личку администратора.")
+
+
 def check():
     me = api("getMe")
     print("Бот:", f"@{me.get('username')}", "|", me.get("first_name"))
@@ -187,20 +205,47 @@ def check():
     print("ADMIN_CHAT_ID:", ADMIN_CHAT_ID or "не задан (уведомления о выдаче не придут)")
 
 
+def load_offset():
+    try:
+        with open(OFFSET_FILE, encoding="utf-8") as f:
+            return int(f.read().strip() or 0)
+    except (OSError, ValueError):
+        return 0
+
+
+def save_offset(offset):
+    try:
+        with open(OFFSET_FILE, "w", encoding="utf-8") as f:
+            f.write(str(offset))
+    except OSError as e:
+        print("Не удалось сохранить offset:", e)
+
+
 def main():
     if "--check" in sys.argv:
         check()
         return
+    if "--test" in sys.argv:
+        test_delivery()
+        return
     api("deleteWebhook", drop_pending_updates=False)
     api("getMe")
-    print("Бот запущен, жду сообщения...")
-    offset = 0
+    deadline = time.time() + RUN_MINUTES * 60 if RUN_MINUTES else None
+    print("Бот запущен, жду сообщения..." + (f" (лимит {RUN_MINUTES} мин)" if deadline else ""))
+    offset = load_offset()
+    if offset:
+        print("Продолжаю с offset", offset)
     while True:
+        if deadline and time.time() > deadline:
+            print("Время работы вышло, сохраняю offset и останавливаюсь.")
+            save_offset(offset)
+            return
         try:
             updates = api("getUpdates", offset=offset, timeout=POLL_TIMEOUT,
                           allowed_updates=["message", "callback_query"])
             for update in updates:
                 offset = update["update_id"] + 1
+                save_offset(offset)
                 if "callback_query" in update:
                     handle_callback(update["callback_query"])
                 elif "message" in update:

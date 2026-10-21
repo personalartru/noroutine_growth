@@ -138,6 +138,28 @@ docker run -d --name noroutine-bot --env-file .env -v "$PWD/materials:/app/mater
 CI в репозитории дополнительно проверяет, что архив лид-магнита совпадает
 с результатом `build_materials.py` (workflow `Check materials`).
 
+## Вариант без сервера: бот в GitHub Actions
+
+Если VPS пока нет — бот может работать прямо в GitHub Actions:
+
+| Workflow | Что делает |
+|---|---|
+| `Check lead bot` | диагностика + сквозная проверка: выдаёт архив в личку админа |
+| `Run lead bot (GitHub Actions)` | крутит polling бота ~8 минут, каждые 11 минут (schedule) |
+
+Секреты, которые нужны обоим workflow (в репозитории `noroutine_growth`):
+
+| Секрет | Значение |
+|---|---|
+| `LEAD_BOT_TOKEN` | токен бота @noroutine_ai_bot из BotFather |
+| `LEAD_CHANNEL_USERNAME` | `@noroutine2026` |
+| `LEAD_ADMIN_CHAT_ID` | `270479866` |
+
+Плюсы: ноль инфраструктуры, токен никогда не попадает в код. Минусы: ответ
+бота может задержаться до ~11 минут (расписание GitHub запускается не точно),
+workflows отключаются при простое репозитория больше 60 дней. Для постоянной
+работы — systemd на VPS.
+
 ## Деплой по кнопке (GitHub Actions)
 
 Workflow `Deploy bot` сам подключается к серверу по SSH и выполняет

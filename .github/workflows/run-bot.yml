@@ -1,0 +1,44 @@
+name: Run lead bot (GitHub Actions)
+
+on:
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: "Сколько минут работать (максимум 9, чтобы не упереться в лимит)"
+        required: false
+        default: "8"
+        type: string
+  schedule:
+    - cron: "*/11 * * * *"
+
+jobs:
+  bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Собрать лид-магнит
+        run: python build_materials.py
+      - name: Восстановить offset
+        uses: actions/cache/restore@v4
+        with:
+          path: .offset
+          key: lead-bot-offset-${{ github.run_id }}
+          restore-keys: lead-bot-offset-
+      - name: Опрашивать Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.LEAD_BOT_TOKEN }}
+          CHANNEL_USERNAME: ${{ secrets.LEAD_CHANNEL_USERNAME }}
+          ADMIN_CHAT_ID: ${{ secrets.LEAD_ADMIN_CHAT_ID }}
+          POLL_TIMEOUT: "20"
+          BOT_RUN_MINUTES: ${{ inputs.minutes || '8' }}
+        run: python bot.py --run-minutes "${{ inputs.minutes || '8' }}"
+      - name: Сохранить offset
+        uses: actions/cache/save@v4
+        with:
+          path: .offset
+          key: lead-bot-offset-${{ github.run_id }}

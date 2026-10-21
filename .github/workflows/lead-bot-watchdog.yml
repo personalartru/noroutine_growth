@@ -34,14 +34,7 @@ jobs:
             age=9999
           else
             created=$(echo "$last" | cut -d' ' -f1)
-            age=$(python3 - "$created" <<'PYEOF'
-import datetime, sys
-created = sys.argv[1]
-dt = datetime.datetime.strptime(created, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
-now = datetime.datetime.now(datetime.timezone.utc)
-print(int((now - dt).total_seconds() // 60))
-PYEOF
-)
+            age=$(python3 -c "import datetime,sys; c=datetime.datetime.strptime(sys.argv[1], '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=datetime.timezone.utc); print(int((datetime.datetime.now(datetime.timezone.utc)-c).total_seconds()//60))" "$created")
           fi
           echo "Возраст последнего запуска: ${age} мин"
 

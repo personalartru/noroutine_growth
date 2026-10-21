@@ -16,9 +16,11 @@ echo "==> пересборка лид-магнита"
 ./.venv/bin/python build_materials.py
 
 echo "==> перезапуск"
-systemctl restart noroutine-bot
+SUDO=""
+if [ "$(id -u)" -ne 0 ]; then SUDO="sudo"; fi
+$SUDO systemctl restart noroutine-bot
 sleep 2
-systemctl --no-pager --lines=5 status noroutine-bot || true
+$SUDO systemctl --no-pager --lines=5 status noroutine-bot || true
 
 echo "==> проверка"
 ./.venv/bin/python bot.py --check

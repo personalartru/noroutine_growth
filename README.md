@@ -138,6 +138,24 @@ docker run -d --name noroutine-bot --env-file .env -v "$PWD/materials:/app/mater
 CI в репозитории дополнительно проверяет, что архив лид-магнита совпадает
 с результатом `build_materials.py` (workflow `Check materials`).
 
+## Деплой по кнопке (GitHub Actions)
+
+Workflow `Deploy bot` сам подключается к серверу по SSH и выполняет
+`deploy/deploy.sh`. Нужны секреты в репозитории:
+
+| Секрет | Значение |
+|---|---|
+| `DEPLOY_HOST` | адрес сервера (например `123.45.67.89`) |
+| `DEPLOY_USER` | пользователь с правом `sudo systemctl restart noroutine-bot` |
+| `DEPLOY_SSH_KEY` | приватный SSH-ключ (для деплоя) |
+
+Дальше: любой push в `main` или ручной запуск workflow обновляет бота.
+Для этого у пользователя в `sudoers` должно быть:
+
+```
+$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart noroutine-bot
+```
+
 ## Лог событий
 
 `events.jsonl` — по строке на событие:

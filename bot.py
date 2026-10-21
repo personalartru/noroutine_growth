@@ -10,6 +10,7 @@ deep link (?start=site|rutube|youtube|...), поэтому видно, како�
 """
 import json
 import os
+import sys
 import time
 from datetime import datetime, timezone
 
@@ -79,12 +80,19 @@ def log_event(**fields):
         f.write(json.dumps(fields, ensure_ascii=False) + "\n")
 
 
+LAST_CHECK_ERROR = ""
+
+
 def is_subscribed(user_id):
+    global LAST_CHECK_ERROR
     target = CHANNEL_ID or CHANNEL_USERNAME
     try:
         member = api("getChatMember", chat_id=target, user_id=user_id)
-    except RuntimeError:
+    except RuntimeError as e:
+        LAST_CHECK_ERROR = str(e)
+        print("Не удалось проверить подписку:", e)
         return None
+    LAST_CHECK_ERROR = ""
     status = member.get("status")
     return status in ("creator", "administrator", "member", "restricted")
 
@@ -119,9 +127,14 @@ def handle_start(message):
         send_message(chat_id, TEXT_AFTER_SUB)
         deliver_material(chat_id, source)
     else:
+        hint = ""
+        if state is None:
+            hint = ("\n\n⚠️ Сейчас я не могу проверить подписку: бот не администратор "
+                    "канала. Если вы — владелец канала, добавьте бота администратором "
+                    "и напишите мне ещё раз.")
         send_message(
             chat_id,
-            TEXT_HELLO + "\n\nПодпишись на канал — и сразу пришлю сборку шаблонов.",
+            TEXT_HELLO + "\n\nПодпишись на канал — и сразу пришлю сборку воркфлоу." + hint,
             buttons=[BTN_SUB, BTN_CHECK],
         )
 
@@ -159,7 +172,25 @@ def handle_text(message):
         send_message(chat_id, "Пришлите /start — выдам сборку шаблонов.")
 
 
+def check():
+    me = api("getMe")
+    print("Бот:", f"@{me.get('username')}", "|", me.get("first_name"))
+    print("Материал:", MATERIALS_PATH, "—",
+          "есть" if os.path.exists(MATERIALS_PATH) else "НЕТ (запустите build_materials.py)")
+    target = CHANNEL_ID or CHANNEL_USERNAME
+    try:
+        api("getChatMember", chat_id=target, user_id=ADMIN_CHAT_ID or me.get("id"))
+        print("Канал", target, "— бот видит участников: ок")
+    except RuntimeError as e:
+        print("Канал", target, "— проверка не прошла:", e)
+        print("  -> добавьте бота администратором канала @noroutine2026")
+    print("ADMIN_CHAT_ID:", ADMIN_CHAT_ID or "не задан (уведомления о выдаче не придут)")
+
+
 def main():
+    if "--check" in sys.argv:
+        check()
+        return
     api("deleteWebhook", drop_pending_updates=False)
     api("getMe")
     print("Бот запущен, жду сообщения...")

@@ -26,8 +26,14 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env   # вписать токен и admin chat id
 python build_materials.py
-python bot.py
+python bot.py --check  # диагностика: бот, материал, доступ к каналу
+python bot.py           # запуск (long polling, держите окно открытым)
 ```
+
+`--check` отвечает на главный вопрос «почему бот молчит»: показывает, запущен
+ли бот, лежит ли архив и видит ли бот участников канала. Если последняя
+проверка не проходит — бот не администратор канала, и он не сможет проверить
+подписку.
 
 ### Что нужно от Telegram
 
@@ -135,7 +141,7 @@ systemctl restart noroutine-bot
 
 1. Создать бота, добавить его администратором канала `@noroutine2026`.
 2. `python build_materials.py` — собрать ZIP.
-3. Задеплоить бота (systemd или Docker), заполнить `.env`.
+3. Задеплоить бота (systemd или Docker), заполнить `.env`, проверить `python bot.py --check`.
 4. Проверить: `https://t.me/noroutine_ai_bot?start=test` → бот должен спросить
    подписку и выдать архив после подписки на канал.
 5. Опубликовать и закрепить пост-визитку (workflow `Publish pinned post`

@@ -10,8 +10,6 @@ on:
         type: string
   push:
     branches: [main]
-  schedule:
-    - cron: "*/11 * * * *"
 
 permissions:
   contents: read

@@ -21,7 +21,9 @@ jobs:
       - name: Проверить свежесть запусков бота
         id: check
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # PAT: запущенный им прогон продолжит цепочку сам.
+          # GITHUB_TOKEN как запасной вариант: такой прогон цепочку не продолжит.
+          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN || secrets.GITHUB_TOKEN }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.LEAD_BOT_TOKEN }}
           LEAD_ADMIN_CHAT_ID: ${{ secrets.LEAD_ADMIN_CHAT_ID }}
         run: |
@@ -49,7 +51,7 @@ jobs:
             if [[ -n "${TELEGRAM_BOT_TOKEN:-}" && -n "${LEAD_ADMIN_CHAT_ID:-}" ]]; then
               curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
                 --data-urlencode "chat_id=${LEAD_ADMIN_CHAT_ID}" \
-                --data-urlencode "text=Сторож: бот не работал ${age} минут — я его перезапустил." \
+                --data-urlencode "text=Сторож: бот не работал ${age} минут — я его перезапустил. Если так повторяется — проверьте секрет DISPATCH_TOKEN." \
                 >/dev/null || true
             fi
             echo "restarted=true" >> "$GITHUB_OUTPUT"

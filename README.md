@@ -154,6 +154,9 @@ CI в репозитории дополнительно проверяет, чт
 | `LEAD_BOT_TOKEN` | токен бота @noroutine_ai_bot из BotFather |
 | `LEAD_CHANNEL_USERNAME` | `@noroutine2026` |
 | `LEAD_ADMIN_CHAT_ID` | `270479866` |
+| `MAX_BOT_TOKEN` | токен MAX-бота (того же, что админ канала) — нужен для выдачи лид-магнита в MAX |
+| `MAX_CHANNEL_ID` | chat_id канала в MAX, **с минусом**: `-71062363105923` |
+| `MAX_ADMIN_CHAT_ID` | ваш личный чат в MAX (куда приходят заявки) |
 
 **Чтобы бот работал непрерывно**, добавьте четвёртый секрет — classic PAT с
 галочками `repo` и `workflow` (github.com/settings/tokens). Workflow тогда
@@ -187,6 +190,19 @@ Workflow `Deploy bot` сам подключается к серверу по SSH
 ```
 $USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart noroutine-bot
 ```
+
+## Лид-магнит и заявки в MAX
+
+MAX-бот (`noroutine_bot`) — администратор канала `max.ru/channel_noroutine`.
+В CI-цикле `Run lead bot` он слушает обсуждение канала:
+
+- `/start` или «материал» → если человек подписан на канал, бот отдаёт ZIP
+  с 5 воркфлоу; если нет — просит подписаться (кнопка);
+- любой другой текст → заявка: пересылается вам в личный чат MAX
+  (имя, user_id, ссылка на профиль), пользователю уходит подтверждение.
+
+`chat_id` канала в MAX отрицательный: `-71062363105923`. Положительный
+номер с веб-страницы в Bot API не работает (`chat.not.found`).
 
 ## Как приходят заявки
 

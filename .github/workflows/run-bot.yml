@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       minutes:
-        description: "Сколько минут работать (максимум 9, чтобы не упереться в лимит)"
+        description: "Сколько минут работать (максимум 20, чтобы не упереться в лимит)"
         required: false
-        default: "8"
+        default: "16"
         type: string
   push:
     branches: [main]
@@ -19,7 +19,7 @@ permissions:
 jobs:
   bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -28,25 +28,45 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Собрать лид-магнит
         run: python build_materials.py
+      - name: Сертификаты Минцифры (нужны для API MAX)
+        env:
+          REQUESTS_CA_BUNDLE: /etc/ssl/certs/ca-certificates.crt
+        run: |
+          curl -fsSL https://gu-st.ru/content/lending/russian_trusted_root_ca_pem.crt -o /tmp/root.crt
+          curl -fsSL https://gu-st.ru/content/lending/russian_trusted_sub_ca_pem.crt -o /tmp/sub.crt
+          sudo cp /tmp/root.crt /usr/local/share/ca-certificates/russian_trusted_root_ca.crt
+          sudo cp /tmp/sub.crt /usr/local/share/ca-certificates/russian_trusted_sub_ca.crt
+          sudo update-ca-certificates
       - name: Восстановить offset
         uses: actions/cache/restore@v4
         with:
-          path: .offset
+          path: |
+            .offset
+            .max_offset
           key: lead-bot-offset-${{ github.run_id }}
           restore-keys: lead-bot-offset-
-      - name: Опрашивать Telegram
+      - name: Опрашивать Telegram и MAX
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.LEAD_BOT_TOKEN }}
           CHANNEL_USERNAME: ${{ secrets.LEAD_CHANNEL_USERNAME }}
           ADMIN_CHAT_ID: ${{ secrets.LEAD_ADMIN_CHAT_ID }}
+          MAX_BOT_TOKEN: ${{ secrets.MAX_BOT_TOKEN }}
+          MAX_CHANNEL_ID: ${{ secrets.MAX_CHANNEL_ID }}
+          MAX_ADMIN_CHAT_ID: ${{ secrets.MAX_ADMIN_CHAT_ID }}
           DISPATCH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
           POLL_TIMEOUT: "20"
-          BOT_RUN_MINUTES: ${{ inputs.minutes || '8' }}
-        run: python bot.py --run-minutes "${{ inputs.minutes || '8' }}"
+          BOT_RUN_MINUTES: ${{ inputs.minutes || '16' }}
+          REQUESTS_CA_BUNDLE: /etc/ssl/certs/ca-certificates.crt
+        run: |
+          python bot.py --run-minutes "${{ inputs.minutes || '16' }}" &
+          python max_lead.py --minutes "${{ inputs.minutes || '16' }}" &
+          wait
       - name: Сохранить offset
         uses: actions/cache/save@v4
         with:
-          path: .offset
+          path: |
+            .offset
+            .max_offset
           key: lead-bot-offset-${{ github.run_id }}
       - name: Поставить в очередь следующий цикл
         if: always()
@@ -59,4 +79,4 @@ jobs:
           fi
           gh workflow run "Run lead bot (GitHub Actions)" \
             --ref "${{ github.ref_name }}" \
-            -f "minutes=${{ inputs.minutes || '8' }}" || echo "не удалось поставить в очередь"
+            -f "minutes=${{ inputs.minutes || '16' }}" || echo "не удалось поставить в очередь"

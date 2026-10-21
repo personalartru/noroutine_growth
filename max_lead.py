@@ -38,13 +38,19 @@ TEXT_AFTER_SUB = (
 )
 
 TEXT_REQUEST_SENT = (
-    "Принял запрос — передал Павел, он свяжется с вами.\n\n"
-    "Пока ждёте ответа: посмотрите архив выше — там воркфлоу, которые чаще всего "
-    "нужны первыми, и их можно развернуть сразу."
+    "Принял запрос и скоро мы с вами свяжемся!\n\n"
+    "Пока ждёте ответа: посмотрите архив — там воркфлоу для n8n, которые чаще "
+    "всего нужны первыми, и их можно развернуть сразу."
+)
+
+TEXT_OPEN_BOT = (
+    "Принял запрос и скоро мы с вами свяжемся!\n\n"
+    "Чтобы забрать архив с воркфлоу, откройте бот в личке: кнопка ниже."
 )
 
 BTN_SUB = {"type": "link", "text": "Подписаться на канал", "url": "https://max.ru/channel_noroutine"}
 BTN_TASK = {"type": "callback", "text": "Хочу такую же под свой процесс", "action": "want_task"}
+BTN_OPEN = {"type": "link", "text": "Открыть бота", "url": "https://max.ru/noroutine_bot"}
 
 TEXT_TASK_PROMPT = (
     "Отлично. Опишите задачу одним сообщением: что сейчас делаете руками, "
@@ -77,20 +83,33 @@ def send_message(chat_id, text, buttons=None):
     return call("POST", "messages", query={"chat_id": chat_id}, body=body)
 
 
-def reply(chat_id, post_id, text, buttons=None):
-    """Ответ комментарием к тому же посту, иначе — сообщением в чат."""
-    if post_id:
-        try:
-            call("POST", f"messages/{post_id}/comments", body={
-                "text": text,
-                "format": "html",
-            })
-            print("Ответ комментарием к посту:", post_id)
-            return True
-        except RuntimeError as e:
-            print("Не удалось ответить комментарием:", e)
-    send_message(chat_id, text, buttons)
-    return True
+def send_direct(user_id, text, file_token=None, buttons=None):
+    """Личное сообщение пользователю: chat_id в MAX = user_id."""
+    body = {"text": text, "format": "html", "notify": True}
+    if file_token:
+        body["attachments"] = [{"type": "file", "payload": {"token": file_token}}]
+    if buttons:
+        body.setdefault("attachments", []).append({
+            "type": "inline_keyboard",
+            "payload": {"buttons": [buttons]},
+        })
+    try:
+        call("POST", "messages", query={"chat_id": user_id}, body=body)
+        print("Отправлено в личку:", user_id)
+        return True
+    except RuntimeError as e:
+        print("Личка недоступна:", e)
+        return False
+
+
+def notify_in_chat(chat_id, text, buttons=None):
+    """Запасной вариант: сообщение в чат обсуждения (в канал не пишем)."""
+    try:
+        send_message(chat_id, text, buttons)
+        return True
+    except RuntimeError as e:
+        print("Не удалось ответить в чат:", e)
+        return False
 
 
 def upload_pack():
@@ -106,6 +125,7 @@ def upload_pack():
     if r.status_code != 200:
         raise RuntimeError(f"uploads: HTTP {r.status_code} {r.text[:200]}")
     data = r.json()
+    print("uploads ->", str(data)[:300])
     token = data.get("token") or (data.get("result") or {}).get("token")
     if token:
         return token
@@ -123,20 +143,30 @@ def upload_pack():
     if r2.status_code != 200:
         raise RuntimeError(f"upload url: HTTP {r2.status_code} {r2.text[:200]}")
     data2 = r2.json()
-    token = data2.get("token") or (data2.get("result") or {}).get("token")
+    print("upload-url ->", str(data2)[:300])
+    token = (data2.get("token") or (data2.get("result") or {}).get("token")
+             or data.get("token") or (data.get("result") or {}).get("token"))
     if not token:
         raise RuntimeError(f"MAX не вернул токен файла: {str(data2)[:200]}")
     return token
 
 
-def send_pack(chat_id):
+def send_pack(user_id, chat_id=None):
+    """Выдаёт архив: сперва в личку, при неудаче — в чат обсуждения."""
     token = upload_pack()
-    call("POST", "messages", query={"chat_id": chat_id}, body={
-        "text": "5 готовых n8n-воркфлоу — импорт в n8n за минуту. Гайд внутри архива.",
-        "format": "html",
-        "notify": True,
-        "attachments": [{"type": "file", "payload": {"token": token}}],
-    })
+    text = "5 готовых n8n-воркфлоу — импорт в n8n за минуту. Гайд внутри архива."
+    if send_direct(user_id, text, file_token=token):
+        return True
+    if chat_id:
+        body = {"text": text, "format": "html", "notify": True,
+                "attachments": [{"type": "file", "payload": {"token": token}}]}
+        try:
+            call("POST", "messages", query={"chat_id": chat_id}, body=body)
+            print("Архив отправлен в чат:", chat_id)
+            return True
+        except RuntimeError as e:
+            print("Не удалось отдать архив:", e)
+    return False
 
 
 def is_subscribed(user_id):
@@ -151,14 +181,18 @@ def is_subscribed(user_id):
     return None
 
 
-def forward_to_admin(user_id, name, text):
+def forward_to_admin(user_id, name, text, username=None):
     link = f"https://max.ru/u/{user_id}" if user_id else ""
+    who = f"{name or 'без имени'}"
+    if username:
+        who += f" (@{username})"
     message = (
         "📩 Заявка из MAX-канала\n"
-        f"Кто: {name or 'без имени'}\n"
+        f"Кто: {who}\n"
         f"user_id: {user_id}\n"
-        f"Ссылка: {link}\n\n"
-        f"Текст:\n{text}"
+        f"Ссылка на профиль: {link}\n\n"
+        f"Текст запроса:\n{text}\n\n"
+        "Ответьте ему в личку MAX: откройте профиль выше и напишите."
     )
     if not ADMIN_CHAT_ID:
         print("MAX_ADMIN_CHAT_ID не задан — заявка только в лог")
@@ -199,6 +233,7 @@ def handle_event(event):
     sender = message.get("sender") or event.get("user") or {}
     user_id = sender.get("user_id")
     name = sender.get("name") or sender.get("first_name") or ""
+    username = sender.get("username")
     print(f"событие {kind} | chat_type {chat_type} | post_id(b64) "
           f"{base64.b64encode(str(post_id).encode()).decode()} | chat_id(b64) "
           f"{base64.b64encode(str(chat_id).encode()).decode()} | "
@@ -210,17 +245,24 @@ def handle_event(event):
     if lowered in ("/start", "старт", "начать", "материал", "/материал", "связки", "шаблоны"):
         state = is_subscribed(user_id)
         if state:
-            reply(chat_id, post_id, TEXT_AFTER_SUB)
-            send_pack(chat_id)
-            print("Выдан материал:", chat_id)
+            send_direct(user_id, TEXT_AFTER_SUB)
+            send_pack(user_id, chat_id)
         else:
-            reply(chat_id, post_id, TEXT_HELLO, buttons=BTN_SUB)
+            send_direct(user_id, TEXT_HELLO, buttons=BTN_SUB) or \
+                notify_in_chat(chat_id, TEXT_HELLO, buttons=BTN_SUB)
         return
 
-    if forward_to_admin(user_id, name, text):
-        reply(chat_id, post_id, TEXT_REQUEST_SENT)
+    if forward_to_admin(user_id, name, text, username):
+        token = None
+        try:
+            token = upload_pack()
+        except RuntimeError as e:
+            print("Не удалось загрузить архив:", e)
+        if not send_direct(user_id, TEXT_REQUEST_SENT, file_token=token):
+            notify_in_chat(chat_id, TEXT_OPEN_BOT, buttons=BTN_OPEN)
     else:
-        reply(chat_id, post_id, "Запрос принят, скоро свяжемся.")
+        send_direct(user_id, "Запрос принят, скоро свяжемся.") or \
+            notify_in_chat(chat_id, "Запрос принят, скоро свяжемся.")
 
 
 def main():

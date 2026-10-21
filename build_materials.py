@@ -625,12 +625,17 @@ def handler(event, context):
 ''')
 
     zip_path = os.path.join(OUT_DIR, "noroutine-n8n-pack.zip")
+    fixed_date = (2026, 1, 1, 0, 0, 0)
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
-        z.write(os.path.join(OUT_DIR, "README.md"), "README.md")
-        for name in sorted(os.listdir(WF_DIR)):
-            z.write(os.path.join(WF_DIR, name), f"workflows/{name}")
-        for name in sorted(os.listdir(BONUS_DIR)):
-            z.write(os.path.join(BONUS_DIR, name), f"workflows-bonus/{name}")
+        entries = [(os.path.join(OUT_DIR, "README.md"), "README.md")]
+        entries += [(os.path.join(WF_DIR, n), f"workflows/{n}") for n in sorted(os.listdir(WF_DIR))]
+        entries += [(os.path.join(BONUS_DIR, n), f"workflows-bonus/{n}") for n in sorted(os.listdir(BONUS_DIR))]
+        for src, arc in entries:
+            info = zipfile.ZipInfo(arc, date_time=fixed_date)
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.external_attr = 0o644 << 16
+            with open(src, "rb") as f:
+                z.writestr(info, f.read())
         for name in sorted(os.listdir(fn_dir)):
             z.write(os.path.join(fn_dir, name), f"functions/{name}")
     core = sum(1 for w in workflows if w.get("core"))

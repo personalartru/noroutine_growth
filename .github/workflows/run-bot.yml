@@ -10,6 +10,12 @@ on:
         type: string
   push:
     branches: [main]
+    paths:
+      - "bot.py"
+      - "max_lead.py"
+      - "footer.py"
+      - "requirements.txt"
+      - ".github/workflows/run-bot.yml"
 
 permissions:
   contents: read
@@ -19,7 +25,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     concurrency:
-      group: lead-bot
+      # Имя группы меняем при смене схемы очереди: отменённый прогон в очереди
+      # иногда оставляет группу зависшей, и новые прогоны не стартуют.
+      group: lead-bot-v2
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4

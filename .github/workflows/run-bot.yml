@@ -45,6 +45,7 @@ jobs:
             .offset
             .max_offset
             .max_pending.json
+            .max_comment_chat
           key: lead-bot-offset-${{ github.run_id }}
           restore-keys: lead-bot-offset-
       - name: Опрашивать Telegram и MAX
@@ -74,6 +75,7 @@ jobs:
             .offset
             .max_offset
             .max_pending.json
+            .max_comment_chat
           key: lead-bot-offset-${{ github.run_id }}
       - name: Поставить в очередь следующий цикл
         if: always()

@@ -31,6 +31,7 @@ MATERIALS_PATH = os.environ.get("MATERIALS_PATH", "materials/noroutine-n8n-pack.
 RUN_MINUTES = float(os.environ.get("BOT_RUN_MINUTES", "9") or 9)
 OFFSET_FILE = os.environ.get("MAX_OFFSET_FILE", ".max_offset")
 PENDING_FILE = os.environ.get("MAX_PENDING_FILE", ".max_pending.json")
+COMMENT_CHAT_FILE = os.environ.get("MAX_COMMENT_CHAT_FILE", ".max_comment_chat")
 BOT_USERNAME = os.environ.get("MAX_BOT_USERNAME", "")
 
 # ── Тексты (совпадают с Telegram-ботом) ──────────────────────────────────────
@@ -305,6 +306,15 @@ def code_sha():
         return "?"
 
 
+def remember_comment_chat(chat_id):
+    """Запоминаем чат обсуждений канала: туда бот отвечает, если личка недоступна."""
+    try:
+        with open(COMMENT_CHAT_FILE, "w", encoding="utf-8") as f:
+            f.write(str(chat_id))
+    except OSError as e:
+        print("Не удалось сохранить чат обсуждений:", e)
+
+
 def load_offset():
     try:
         with open(OFFSET_FILE, encoding="utf-8") as f:
@@ -425,6 +435,8 @@ def handle_event(event):
     name = sender.get("name") or sender.get("first_name") or ""
     username = sender.get("username")
 
+    if post_id and chat_type == "chat":
+        remember_comment_chat(chat_id)
     print(f"событие {kind} | chat_type {chat_type} | user {user_id} | "
           f"chat_id(b64) {base64.b64encode(str(chat_id).encode()).decode()} | "
           f"текст: {text[:60]!r}")

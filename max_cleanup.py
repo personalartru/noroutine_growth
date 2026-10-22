@@ -14,12 +14,12 @@ MAX_API = os.environ.get("MAX_API_BASE", "https://platform-api2.max.ru")
 TOKEN = os.environ["MAX_BOT_TOKEN"]
 CHANNEL_ID = os.environ["MAX_CHANNEL_ID"]
 
+# Только лид-ответы бота. Посты запуска канала («5 готовых n8n-воркфлоу — бесплатно»,
+# «No ! Routine — автоматизация рутины…») трогать нельзя — они опубликованы намеренно.
 MARKERS = (
     "Принял запрос",
-    "Откройте бота",
-    "5 готовых n8n-воркфлоу",
-    "Готово, спасибо за подписку",
-    "Привет! Это бот канала",
+    "Откройте бота, чтобы получить архив",
+    "Откройте бота, чтобы забрать архив",
     "Материал доступен подписчикам",
 )
 
@@ -38,28 +38,45 @@ def api(method, path, query=None, body=None):
     return r.json()
 
 
+def comment_chat_id():
+    """Чат обсуждений канала — его запоминает лид-бот при обработке комментария."""
+    path = os.environ.get("MAX_COMMENT_CHAT_FILE", ".max_comment_chat")
+    try:
+        with open(path, encoding="utf-8") as f:
+            return f.read().strip()
+    except OSError:
+        return ""
+
+
 def main():
     dry_run = "--dry-run" in sys.argv
-    data = api("GET", "messages", query={"chat_id": CHANNEL_ID})
-    messages = data.get("messages") or []
-    print("Сообщений в канале:", len(messages))
+    chats = [CHANNEL_ID]
+    chat = comment_chat_id()
+    if chat and chat != CHANNEL_ID:
+        chats.append(chat)
+    print("Проверяю чаты:", chats)
 
     removed = 0
-    for message in messages:
-        body = message.get("body") or {}
-        text = body.get("text") or ""
-        if not any(marker in text for marker in MARKERS):
-            continue
-        mid = body.get("mid")
-        print(f"  найдено лид-сообщение: {mid} | {text[:70]!r}")
-        if dry_run:
-            continue
-        try:
-            api("DELETE", f"messages/{mid}")
-            print("    удалено")
-            removed += 1
-        except RuntimeError as e:
-            print("    не удалось удалить:", e)
+    for target in chats:
+        data = api("GET", "messages", query={"chat_id": target})
+        messages = data.get("messages") or []
+        print(f"Сообщений в {target}: {len(messages)}")
+        for message in messages:
+            body = message.get("body") or {}
+            text = body.get("text") or ""
+            has_file = bool(body.get("attachments"))
+            if not any(marker in text for marker in MARKERS):
+                continue
+            mid = body.get("mid")
+            print(f"  найдено лид-сообщение: {mid} | файл: {has_file} | {text[:70]!r}")
+            if dry_run:
+                continue
+            try:
+                api("DELETE", "messages", query={"message_id": mid})
+                print("    удалено")
+                removed += 1
+            except RuntimeError as e:
+                print("    не удалось удалить:", e)
 
     print("Удалено:", removed, "| dry-run" if dry_run else "")
 

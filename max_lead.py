@@ -285,10 +285,14 @@ def is_subscribed(user_id):
             print(f"  GET /chats/{target}/members?user_ids={user_id} -> {len(members)} результатов")
             if members:
                 member = members[0]
-                print(f"  -> member объект: {member}")
-                status = member.get("status")
-                print(f"  -> user={member.get('user_id')}, status={status!r}")
-                result = status in ("creator", "administrator", "member", "restricted")
+                # MAX API не использует поле status (как Telegram)
+                # Проверяем: is_owner, is_admin, или join_time (обычный участник)
+                is_owner = member.get("is_owner", False)
+                is_admin = member.get("is_admin", False)
+                join_time = member.get("join_time")
+                print(f"  -> user={member.get('user_id')}, is_owner={is_owner}, is_admin={is_admin}, join_time={join_time}")
+                # Если join_time присутствует → пользователь подписан (не удалён/забанен)
+                result = bool(join_time)
                 print(f"  -> подписка {'видна' if result else 'НЕ видна'}")
                 return result
             else:

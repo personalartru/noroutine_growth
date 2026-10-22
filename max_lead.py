@@ -285,6 +285,7 @@ def is_subscribed(user_id):
             print(f"  GET /chats/{target}/members?user_ids={user_id} -> {len(members)} результатов")
             if members:
                 member = members[0]
+                print(f"  -> member объект: {member}")
                 status = member.get("status")
                 print(f"  -> user={member.get('user_id')}, status={status!r}")
                 result = status in ("creator", "administrator", "member", "restricted")

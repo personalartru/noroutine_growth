@@ -84,6 +84,7 @@ jobs:
             echo "DISPATCH_TOKEN не задан — следующий цикл не запущен"
             exit 0
           fi
+          # minutes не передаём: новый прогон берёт дефолт из workflow,
+          # иначе старое значение тащится по всей цепочке.
           gh workflow run "Run lead bot (GitHub Actions)" \
-            --ref "${{ github.ref_name }}" \
-            -f "minutes=${{ inputs.minutes || '9' }}" || echo "не удалось поставить в очередь"
+            --ref "${{ github.ref_name }}" || echo "не удалось поставить в очередь"

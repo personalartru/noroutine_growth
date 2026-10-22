@@ -44,9 +44,9 @@ TEXT_AFTER_SUB = (
 )
 
 TEXT_REQUEST_SENT = (
-    "Принял запрос и скоро мы с вами свяжемся!\n\n"
-    "Пока ждёте ответа: посмотрите архив — там воркфлоу для n8n, которые чаще "
-    "всего нужны первыми, и их можно развернуть сразу."
+    "Принял запрос — изучаю и скоро свяжусь с вами.\n\n"
+    "Пока ждёте ответа: посмотрите архив выше — там воркфлоу, которые чаще всего "
+    "нужны первыми для автоматизации процессов, и их можно развернуть сразу."
 )
 
 TEXT_OPEN_BOT = "Откройте бота, чтобы получить архив и ответ по запросу 👇"
@@ -54,6 +54,13 @@ TEXT_OPEN_BOT = "Откройте бота, чтобы получить архи
 TEXT_PACK = "5 готовых n8n-воркфлоу — импорт в n8n за минуту. Гайд внутри архива."
 
 BTN_SUB = {"type": "link", "text": "Подписаться на канал", "url": "https://max.ru/channel_noroutine"}
+BTN_TASK = {"type": "callback", "text": "Хочу такую же под свой процесс", "payload": "want_task"}
+
+TEXT_TASK_PROMPT = (
+    "Отлично.! Опишите задачу одним сообщением: что сейчас делаете руками, "
+    "какими системами пользуетесь и сколько времени это занимает. "
+    "Я изучу ваш запрос и предложу решение."
+)
 
 
 def bot_username():
@@ -165,7 +172,8 @@ def upload_pack():
 def send_pack(user_id, chat_id=None):
     """Выдаёт архив: сперва в личку, при неудаче — в чат обсуждения."""
     token = upload_pack()
-    if send_direct(user_id, TEXT_PACK, file_token=token, fallback_chat_id=chat_id):
+    if send_direct(user_id, TEXT_PACK, file_token=token, buttons=BTN_TASK,
+                   fallback_chat_id=chat_id):
         return True
     if chat_id:
         try:
@@ -274,10 +282,38 @@ def handle_bot_started(event):
         send_pack(user_id, chat_id)
 
 
+def handle_callback(event):
+    """Пользователь нажал кнопку в MAX."""
+    callback = event.get("callback") or {}
+    payload = callback.get("payload")
+    callback_id = callback.get("callback_id")
+    user = callback.get("user") or {}
+    user_id = user.get("user_id")
+    message = event.get("message") or {}
+    recipient = message.get("recipient") or {}
+    chat_id = recipient.get("chat_id")
+    print(f"нажата кнопка | payload {payload} | callback_id {callback_id} | user {user_id}")
+
+    if payload != "want_task":
+        return
+
+    if callback_id:
+        try:
+            call("POST", "answers", query={"callback_id": callback_id},
+                 body={"message": {"text": TEXT_TASK_PROMPT, "format": "html"}})
+        except RuntimeError as e:
+            print("Не удалось ответить на callback:", e)
+    if not send_direct(user_id, TEXT_TASK_PROMPT, fallback_chat_id=chat_id):
+        notify_in_chat(chat_id, TEXT_TASK_PROMPT)
+
+
 def handle_event(event):
     kind = event.get("update_type") or event.get("type")
     if kind == "bot_started":
         handle_bot_started(event)
+        return
+    if kind == "message_callback":
+        handle_callback(event)
         return
     message = event.get("message") or {}
     body = message.get("body") or {}

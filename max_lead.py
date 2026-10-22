@@ -274,11 +274,13 @@ def is_subscribed(user_id):
     
     Требование: бот должен быть администратором канала (иначе 403).
     """
-    print(f"Проверяю подписку: user_id={user_id}, CHANNEL_ID={CHANNEL_ID!r}")
+    # GitHub маскирует секреты в логах как ***, поэтому выводим структуру ID
+    print(f"Проверяю подписку: user_id={user_id}, CHANNEL_ID длина={len(CHANNEL_ID)}, начало={CHANNEL_ID[:3]!r}, конец={CHANNEL_ID[-3:]!r}")
     for target in (CHANNEL_ID, f"-{CHANNEL_ID.lstrip('-')}"):
         try:
-            # GET /chats/{chatId}/members?user_ids={userId}
-            resp = call("GET", f"chats/{target}/members", query={"user_ids": user_id})
+            # GET /chats/{chatId}/members?user_ids[]={userId}
+            # user_ids — это массив, даже если проверяем одного пользователя
+            resp = call("GET", f"chats/{target}/members", query={"user_ids": [user_id]})
             members = (resp or {}).get("members", [])
             print(f"  GET /chats/{target}/members?user_ids={user_id} -> {len(members)} результатов")
             if members:

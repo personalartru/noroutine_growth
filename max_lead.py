@@ -32,6 +32,7 @@ RUN_MINUTES = float(os.environ.get("BOT_RUN_MINUTES", "9") or 9)
 OFFSET_FILE = os.environ.get("MAX_OFFSET_FILE", ".max_offset")
 PENDING_FILE = os.environ.get("MAX_PENDING_FILE", ".max_pending.json")
 COMMENT_CHAT_FILE = os.environ.get("MAX_COMMENT_CHAT_FILE", ".max_comment_chat")
+DIALOGS_FILE = os.environ.get("MAX_DIALOGS_FILE", ".max_dialogs.json")
 BOT_USERNAME = os.environ.get("MAX_BOT_USERNAME", "")
 
 # ── Тексты (совпадают с Telegram-ботом) ──────────────────────────────────────
@@ -86,6 +87,15 @@ def bot_username():
     return BOT_USERNAME
 
 
+def bot_display_name():
+    """Отображаемое имя бота (без @ — упоминания в комментариях запрещены)."""
+    try:
+        me = call("GET", "me") or {}
+        return (me.get("name") or me.get("first_name") or bot_username()).lstrip("@")
+    except RuntimeError:
+        return bot_username()
+
+
 def bot_link(payload=""):
     link = f"https://max.ru/{bot_username()}"
     return f"{link}?start={payload}" if payload else link
@@ -110,8 +120,14 @@ def call(method, path, query=None, body=None):
     return r.json()
 
 
-def send_direct(user_id, text, file_token=None, buttons=None, fallback_chat_id=None):
-    """Личное сообщение пользователю: в MAX chat_id диалога = user_id."""
+def send_direct(user_id, text, file_token=None, buttons=None, fallback_chat_id=None,
+                chat_id=None):
+    """Личное сообщение пользователю.
+
+    В MAX chat_id диалога НЕ равен user_id: писать нужно на chat_id
+    (recipient.chat_id в событии), иначе 404 chat.not.found.
+    """
+    user_id = chat_id or user_id
     body = {"text": text, "format": "html", "notify": True}
     attachments = []
     if file_token:
@@ -155,9 +171,10 @@ def send_comment(post_id, text):
     создала бы пост для всех. Ответ на комментарий — только
     POST /messages/{postId}/comments. Вложения в комментариях не поддерживаются.
     """
+    safe_text = text.replace("@", " ")
     try:
         call("POST", f"messages/{post_id}/comments",
-             body={"text": text, "format": "html"})
+             body={"text": safe_text, "format": "html"})
         print("Комментарий отправлен:", post_id)
         return True
     except RuntimeError as e:
@@ -179,18 +196,20 @@ def answer_callback(callback_id, text):
 def respond(user_id, chat_id, post_id, chat_type, text, file_token=None, buttons=None):
     """Ответ пользователю: сначала личка, иначе комментарий под постом.
 
+    chat_id — адресат для лички (chat_id диалога, если он известен).
     В канал (chat_type == "channel") ничего не отправляем — это публикация
     поста для всех подписчиков.
     """
     if buttons:
         buttons = list(buttons) + [[BTN_CHANNEL]]
-    if send_direct(user_id, text, file_token=file_token, buttons=buttons):
+    if chat_id and send_direct(user_id, text, file_token=file_token, buttons=buttons,
+                               chat_id=chat_id):
         return True
 
     if post_id:
         bridge = (
             "\n\nЧтобы получить архив с 5 n8n-воркфлоу и ответ по вашей задаче — "
-            f"откройте бота @{bot_username()} в MAX и напишите /start. "
+            f"откройте бота {bot_display_name()} в поиске MAX и напишите /start. "
             f"Прямая ссылка: {bot_link('lead')}"
         )
         return send_comment(post_id, text + bridge)
@@ -313,6 +332,38 @@ def code_sha():
         return "?"
 
 
+def load_dialogs():
+    try:
+        with open(DIALOGS_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def save_dialogs(dialogs):
+    try:
+        with open(DIALOGS_FILE, "w", encoding="utf-8") as f:
+            json.dump(dialogs, f, ensure_ascii=False, indent=2)
+    except OSError as e:
+        print("Не удалось сохранить диалоги:", e)
+
+
+def remember_dialog(user_id, chat_id):
+    """В MAX chat_id диалога не равен user_id — запоминаем соответствие."""
+    if not user_id or not chat_id:
+        return
+    dialogs = load_dialogs()
+    if dialogs.get(str(user_id)) != chat_id:
+        dialogs[str(user_id)] = chat_id
+        save_dialogs(dialogs)
+        print("Запомнил диалог:", user_id, "->", chat_id)
+
+
+def dialog_for(user_id):
+    """chat_id личного диалога с пользователем (если бот его уже получал)."""
+    return load_dialogs().get(str(user_id))
+
+
 def remember_comment_chat(chat_id):
     """Запоминаем чат обсуждений канала: туда бот отвечает, если личка недоступна."""
     try:
@@ -360,15 +411,18 @@ def handle_callback(callback):
     user = callback.get("user") or {}
     user_id = user.get("user_id")
 
+    chat_id = dialog_for(user_id) or user_id
+
     if payload == "want_task":
-        if not send_direct(user_id, TEXT_TASK_PROMPT):
+        if not send_direct(user_id, TEXT_TASK_PROMPT, buttons=[[BTN_CHANNEL]],
+                           chat_id=chat_id):
             answer_callback(callback_id, TEXT_TASK_PROMPT)
         return
 
     if payload == "check_sub":
         if is_subscribed(user_id):
             answer_callback(callback_id, TEXT_AFTER_SUB)
-            deliver_material(user_id, "bot-check")
+            deliver_material(user_id, "bot-check", chat_id, None, "dialog")
         else:
             answer_callback(callback_id, TEXT_NOT_SUBSCRIBED)
         return
@@ -406,14 +460,15 @@ def handle_bot_started(event):
     """Пользователь открыл бота по диплинку: отдаём архив в личку."""
     user = event.get("user") or {}
     user_id = user.get("user_id")
-    chat_id = event.get("chat_id") or user_id
-    print("bot_started | user", user_id, "| payload", event.get("payload"))
+    chat_id = event.get("chat_id") or dialog_for(user_id) or user_id
+    remember_dialog(user_id, chat_id)
+    print("bot_started | user", user_id, "| chat", chat_id, "| payload", event.get("payload"))
 
     pending = load_pending()
     request = pending.pop(str(user_id), None)
     save_pending(pending)
 
-    send_direct(user_id, TEXT_AFTER_SUB, buttons=[[BTN_CHANNEL]])
+    send_direct(user_id, TEXT_AFTER_SUB, buttons=[[BTN_CHANNEL]], chat_id=chat_id)
     deliver_material(user_id, "deep-link", chat_id, None, "dialog")
 
 
@@ -443,6 +498,8 @@ def handle_event(event):
     name = sender.get("name") or sender.get("first_name") or ""
     username = sender.get("username")
 
+    if chat_type == "dialog" and chat_id:
+        remember_dialog(user_id, chat_id)
     if post_id and chat_type == "chat":
         remember_comment_chat(chat_id)
     print(f"событие {kind} | chat_type {chat_type} | user {user_id} | "
@@ -450,7 +507,8 @@ def handle_event(event):
           f"текст: {text[:60]!r}")
     if not text:
         return
-    handle_text(user_id, chat_id, post_id, chat_type, name, username, text)
+    target = chat_id if chat_type == "dialog" else dialog_for(user_id)
+    handle_text(user_id, target, post_id, chat_type, name, username, text)
 
 
 def main():

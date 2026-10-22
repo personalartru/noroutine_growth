@@ -1,10 +1,7 @@
 name: MAX cleanup
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - max_cleanup.py
+  # Только ручной запуск: уборка нужна разово, автозапуск не нужен.
   workflow_dispatch:
 
 permissions:

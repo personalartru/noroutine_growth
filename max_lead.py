@@ -146,6 +146,23 @@ def send_to_chat(chat_id, text, buttons=None):
         return False
 
 
+def send_comment(post_id, text):
+    """Ответ комментарием под постом.
+
+    Комментарии в MAX живут внутри канала: публикация в chat_id канала
+    создала бы пост для всех. Ответ на комментарий — только
+    POST /messages/{postId}/comments. Вложения в комментариях не поддерживаются.
+    """
+    try:
+        call("POST", f"messages/{post_id}/comments",
+             body={"text": text, "format": "html"})
+        print("Комментарий отправлен:", post_id)
+        return True
+    except RuntimeError as e:
+        print("Не удалось отправить комментарий:", e)
+        return False
+
+
 def answer_callback(callback_id, text):
     """Ответ на нажатие кнопки: POST /answers?callback_id=..."""
     try:
@@ -155,6 +172,26 @@ def answer_callback(callback_id, text):
     except RuntimeError as e:
         print("Не удалось ответить на callback:", e)
         return False
+
+
+def respond(user_id, chat_id, post_id, chat_type, text, file_token=None, buttons=None):
+    """Ответ пользователю: сначала личка, иначе комментарий под постом.
+
+    В канал (chat_type == "channel") ничего не отправляем — это публикация
+    поста для всех подписчиков.
+    """
+    if send_direct(user_id, text, file_token=file_token, buttons=buttons):
+        return True
+
+    if post_id:
+        bridge = f"\n\nОткройте бота, чтобы забрать архив с воркфлоу: {bot_link('lead')}"
+        return send_comment(post_id, text + bridge)
+
+    if chat_type == "channel":
+        print("Пропускаю ответ: это канал, постинг из лид-бота запрещён")
+        return False
+
+    return send_to_chat(chat_id, text, buttons)
 
 
 def upload_pack():
@@ -190,15 +227,13 @@ def upload_pack():
     return token
 
 
-def deliver_material(user_id, source=None, chat_id=None):
-    """Выдаёт архив: в личку, при неудаче — в чат обсуждения."""
+def deliver_material(user_id, source=None, chat_id=None, post_id=None, chat_type=None):
+    """Выдаёт архив: в личку, при неудаче — комментарием с мостом к боту."""
     token = upload_pack()
-    ok = send_direct(user_id, TEXT_PACK, file_token=token, buttons=[[BTN_TASK]],
-                     fallback_chat_id=chat_id)
+    ok = respond(user_id, chat_id, post_id, chat_type, TEXT_PACK,
+                 file_token=token, buttons=[[BTN_TASK]])
     if ok:
         print("Архив выдан:", user_id)
-    elif chat_id:
-        send_to_chat(chat_id, TEXT_PACK, buttons=[[BTN_TASK]])
     if ADMIN_CHAT_ID:
         send_direct(ADMIN_CHAT_ID, f"Лид-магнит забрали: user_id={user_id}, "
                                    f"источник={source or 'unknown'}")
@@ -287,20 +322,19 @@ def save_offset(offset):
 
 
 # ── Обработчики ─────────────────────────────────────────────────────────────
-def handle_start(user_id, chat_id, text):
+def handle_start(user_id, chat_id, post_id, chat_type, text):
     pending = load_pending()
     request = pending.pop(str(user_id), None)
     save_pending(pending)
 
     state = is_subscribed(user_id)
     if state:
-        send_direct(user_id, TEXT_AFTER_SUB, fallback_chat_id=chat_id)
-        deliver_material(user_id, "max", chat_id)
+        respond(user_id, chat_id, post_id, chat_type, TEXT_AFTER_SUB)
+        deliver_material(user_id, "max", chat_id, post_id)
         return
-    send_direct(user_id, TEXT_HELLO + "\n\n" + TEXT_SUBSCRIBE_HINT,
-                buttons=[[BTN_SUB], [BTN_CHECK]], fallback_chat_id=chat_id) or \
-        send_to_chat(chat_id, TEXT_HELLO + "\n\n" + TEXT_SUBSCRIBE_HINT,
-                     buttons=[[BTN_SUB], [BTN_CHECK]])
+    respond(user_id, chat_id, post_id, chat_type,
+            TEXT_HELLO + "\n\n" + TEXT_SUBSCRIBE_HINT,
+            buttons=[[BTN_SUB], [BTN_CHECK]])
 
 
 def handle_callback(callback):
@@ -323,15 +357,15 @@ def handle_callback(callback):
         return
 
 
-def handle_text(user_id, chat_id, name, username, text):
+def handle_text(user_id, chat_id, post_id, chat_type, name, username, text):
     lowered = text.lower()
     if lowered in ("/start", "старт", "начать", "/material", "/материал",
                    "/materials", "/пакет", "материал", "связки", "шаблоны", "воркфлоу"):
-        handle_start(user_id, chat_id, text)
+        handle_start(user_id, chat_id, post_id, chat_type, text)
         return
 
     if lowered in ("/help", "/помощь", "помощь"):
-        send_direct(user_id, TEXT_HELLO, fallback_chat_id=chat_id)
+        respond(user_id, chat_id, post_id, chat_type, TEXT_HELLO)
         return
 
     if forward_to_admin(user_id, name, text, username):
@@ -344,15 +378,11 @@ def handle_text(user_id, chat_id, name, username, text):
             token = upload_pack()
         except RuntimeError as e:
             print("Не удалось загрузить архив:", e)
-        if not send_direct(user_id, TEXT_REQUEST_SENT, file_token=token,
-                           fallback_chat_id=chat_id):
-            send_to_chat(chat_id, "Принял запрос и скоро мы с вами свяжемся!\n\n"
-                                 "Чтобы забрать архив с воркфлоу, откройте бота — кнопка ниже.",
-                         buttons=[[open_bot_button()]])
+        respond(user_id, chat_id, post_id, chat_type, TEXT_REQUEST_SENT,
+                file_token=token)
     else:
-        send_direct(user_id, "Запрос принят, скоро свяжемся. "
-                             "Для сбора шаблонов пришлите /start.",
-                    fallback_chat_id=chat_id)
+        respond(user_id, chat_id, post_id, chat_type,
+                "Запрос принят, скоро свяжемся. Для сбора шаблонов пришлите /start.")
 
 
 def handle_bot_started(event):
@@ -366,7 +396,7 @@ def handle_bot_started(event):
     request = pending.pop(str(user_id), None)
     save_pending(pending)
 
-    send_direct(user_id, TEXT_AFTER_SUB, fallback_chat_id=chat_id)
+    send_direct(user_id, TEXT_AFTER_SUB)
     deliver_material(user_id, "deep-link", chat_id)
 
 
@@ -400,7 +430,7 @@ def handle_event(event):
           f"текст: {text[:60]!r}")
     if not text:
         return
-    handle_text(user_id, chat_id, name, username, text)
+    handle_text(user_id, chat_id, post_id, chat_type, name, username, text)
 
 
 def main():

@@ -1,94 +1,67 @@
-"""Удаляет служебные (диагностические) сообщения из личного чата с ботом в MAX.
+"""Удаляет сообщения лид-бота, случайно опубликованные в канале как посты.
 
-Чистит сообщения, которые отправляли проверочные скрипты:
-  «Проверка вложения: ...», «Тест: доставка архива админу».
+Комментарии в MAX живут внутри канала, поэтому отправка в chat_id канала
+создаёт пост для всех. Такие посты надо убрать.
 
-История листается по времени (параметры count/from/to у GET /messages),
-поэтому находятся и старые сообщения.
-
-Запуск: python max_cleanup.py
+Запуск: python max_cleanup.py [--dry-run]
 """
 import os
+import sys
 
 import requests
 
 MAX_API = os.environ.get("MAX_API_BASE", "https://platform-api2.max.ru")
 TOKEN = os.environ["MAX_BOT_TOKEN"]
-ADMIN_CHAT_ID = os.environ.get("MAX_ADMIN_CHAT_ID", "")
+CHANNEL_ID = os.environ["MAX_CHANNEL_ID"]
 
-PREFIXES = ("Проверка вложения", "Тест: доставка архива")
-MAX_PAGES = 10
+MARKERS = (
+    "Принял запрос",
+    "Откройте бота",
+    "5 готовых n8n-воркфлоу",
+    "Готово, спасибо за подписку",
+    "Привет! Это бот канала",
+    "Материал доступен подписчикам",
+)
 
 
-def api_get(params):
-    return requests.get(
-        f"{MAX_API}/messages",
-        params=params,
-        headers={"Authorization": TOKEN},
-        timeout=60,
+def api(method, path, query=None, body=None):
+    r = requests.request(
+        method,
+        f"{MAX_API}/{path}",
+        params=query,
+        headers={"Authorization": TOKEN, "Content-Type": "application/json"},
+        json=body,
+        timeout=90,
     )
-
-
-def api_delete(message_id):
-    return requests.delete(
-        f"{MAX_API}/messages",
-        params={"message_id": message_id},
-        headers={"Authorization": TOKEN},
-        timeout=60,
-    )
+    if r.status_code != 200:
+        raise RuntimeError(f"{method} {path}: HTTP {r.status_code} {r.text[:200]}")
+    return r.json()
 
 
 def main():
-    if not ADMIN_CHAT_ID:
-        print("MAX_ADMIN_CHAT_ID не задан — нечего чистить")
-        return
+    dry_run = "--dry-run" in sys.argv
+    data = api("GET", "messages", query={"chat_id": CHANNEL_ID})
+    messages = data.get("messages") or []
+    print("Сообщений в канале:", len(messages))
 
     removed = 0
-    scanned = 0
-    from_param = None
-    last_oldest = None
+    for message in messages:
+        body = message.get("body") or {}
+        text = body.get("text") or ""
+        if not any(marker in text for marker in MARKERS):
+            continue
+        mid = body.get("mid")
+        print(f"  найдено лид-сообщение: {mid} | {text[:70]!r}")
+        if dry_run:
+            continue
+        try:
+            api("DELETE", f"messages/{mid}")
+            print("    удалено")
+            removed += 1
+        except RuntimeError as e:
+            print("    не удалось удалить:", e)
 
-    for page in range(MAX_PAGES):
-        # В MAX: from — «время, до которого берём сообщения» (старые),
-        # to — «начиная с этого» (новые). Чтобы идти вглубь истории, снижаем from.
-        params = {"chat_id": ADMIN_CHAT_ID, "count": 100}
-        if from_param is not None:
-            params["from"] = from_param
-        r = api_get(params)
-        if r.status_code != 200:
-            print("Не удалось получить историю:", r.status_code, r.text[:200])
-            return
-
-        messages = r.json().get("messages") or []
-        if not messages:
-            print(f"Страница {page + 1}: пусто, всё просмотрено")
-            break
-
-        scanned += len(messages)
-        for message in messages:
-            body = message.get("body") or {}
-            text = (body.get("text") or "").strip()
-            if not text.startswith(PREFIXES):
-                continue
-            mid = body.get("mid")
-            d = api_delete(mid)
-            if d.status_code == 200:
-                removed += 1
-            else:
-                print("Не удалось удалить", mid, "-", d.status_code, d.text[:100])
-
-        timestamps = [m.get("timestamp") for m in messages if m.get("timestamp")]
-        if not timestamps:
-            break
-        oldest = min(timestamps)
-        if oldest <= 0 or oldest == last_oldest:
-            print("Дальше идти некуда — история кончилась")
-            break
-        last_oldest = oldest
-        from_param = oldest - 1
-        print(f"Страница {page + 1}: просмотрено {len(messages)}, идём глубже (from={from_param})")
-
-    print(f"Просмотрено сообщений: {scanned}, удалено служебных: {removed}")
+    print("Удалено:", removed, "| dry-run" if dry_run else "")
 
 
 if __name__ == "__main__":

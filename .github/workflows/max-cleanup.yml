@@ -1,7 +1,10 @@
 name: MAX cleanup
 
 on:
-  # Только ручной запуск: уборка нужна разово, автозапуск не нужен.
+  push:
+    branches: [main]
+    paths:
+      - max_cleanup.py
   workflow_dispatch:
 
 permissions:
@@ -25,9 +28,9 @@ jobs:
           sudo cp /tmp/root.crt /usr/local/share/ca-certificates/russian_trusted_root_ca.crt
           sudo cp /tmp/sub.crt /usr/local/share/ca-certificates/russian_trusted_sub_ca.crt
           sudo update-ca-certificates
-      - name: Почистить служебные сообщения
+      - name: Удалить лид-сообщения из канала
         env:
           MAX_BOT_TOKEN: ${{ secrets.MAX_BOT_TOKEN }}
-          MAX_ADMIN_CHAT_ID: ${{ secrets.MAX_ADMIN_CHAT_ID }}
+          MAX_CHANNEL_ID: ${{ secrets.MAX_CHANNEL_ID }}
           REQUESTS_CA_BUNDLE: /etc/ssl/certs/ca-certificates.crt
         run: python max_cleanup.py

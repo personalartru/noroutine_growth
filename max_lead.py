@@ -260,6 +260,16 @@ def save_pending(pending):
         print("Не удалось сохранить состояние заявок:", e)
 
 
+def code_sha():
+    """Версия кода (sha) — чтобы по логу видеть, какая версия работает."""
+    import subprocess
+    try:
+        return subprocess.run(["git", "rev-parse", "--short", "HEAD"],
+                              capture_output=True, text=True, timeout=10).stdout.strip() or "?"
+    except Exception:
+        return "?"
+
+
 def load_offset():
     try:
         with open(OFFSET_FILE, encoding="utf-8") as f:
@@ -400,7 +410,7 @@ def main():
 
     offset = load_offset()
     deadline = time.time() + minutes * 60
-    print(f"MAX-лид-бот запущен, offset {offset}, лимит {minutes} мин")
+    print(f"MAX-лид-бот запущен (версия {code_sha()}), offset {offset}, лимит {minutes} мин")
 
     while time.time() < deadline:
         try:

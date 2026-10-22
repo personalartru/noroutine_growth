@@ -263,6 +263,16 @@ def check():
     print("ADMIN_CHAT_ID:", ADMIN_CHAT_ID or "не задан (уведомления о выдаче не придут)")
 
 
+def code_sha():
+    """Версия кода (sha) — чтобы по логу видеть, какая версия работает."""
+    import subprocess
+    try:
+        return subprocess.run(["git", "rev-parse", "--short", "HEAD"],
+                              capture_output=True, text=True, timeout=10).stdout.strip() or "?"
+    except Exception:
+        return "?"
+
+
 def load_offset():
     try:
         with open(OFFSET_FILE, encoding="utf-8") as f:
@@ -289,7 +299,7 @@ def main():
     api("deleteWebhook", drop_pending_updates=False)
     api("getMe")
     deadline = time.time() + RUN_MINUTES * 60 if RUN_MINUTES else None
-    print("Бот запущен, жду сообщения..." + (f" (лимит {RUN_MINUTES} мин)" if deadline else ""))
+    print("Бот запущен (версия {code_sha()}), жду сообщения..." + (f" (лимит {RUN_MINUTES} мин)" if deadline else ""))
     offset = load_offset()
     if offset:
         print("Продолжаю с offset", offset)

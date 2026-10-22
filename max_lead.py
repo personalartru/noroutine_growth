@@ -270,18 +270,29 @@ def deliver_material(user_id, source=None, chat_id=None, post_id=None, chat_type
 
 
 def is_subscribed(user_id):
-    """Статус пользователя в канале: подписчик получит материал."""
+    """Статус пользователя в канале: подписчик получит материал.
+    
+    Требование: бот должен быть администратором канала (иначе 403).
+    """
     print(f"Проверяю подписку: user_id={user_id}, CHANNEL_ID={CHANNEL_ID!r}")
     for target in (CHANNEL_ID, f"-{CHANNEL_ID.lstrip('-')}"):
         try:
-            member = call("GET", f"chats/{target}/members/{user_id}")
-            status = (member or {}).get("status")
-            print(f"  /chats/{target}/members/{user_id} -> status={status!r}")
-            result = status in ("creator", "administrator", "member", "restricted")
-            print(f"  -> подписка {'видна' if result else 'НЕ видна'}")
-            return result
+            # GET /chats/{chatId}/members?user_ids={userId}
+            resp = call("GET", f"chats/{target}/members", query={"user_ids": user_id})
+            members = (resp or {}).get("members", [])
+            print(f"  GET /chats/{target}/members?user_ids={user_id} -> {len(members)} результатов")
+            if members:
+                member = members[0]
+                status = member.get("status")
+                print(f"  -> user={member.get('user_id')}, status={status!r}")
+                result = status in ("creator", "administrator", "member", "restricted")
+                print(f"  -> подписка {'видна' if result else 'НЕ видна'}")
+                return result
+            else:
+                print(f"  -> пользователь не найден в канале (не подписан)")
+                continue
         except RuntimeError as e:
-            print(f"  /chats/{target}/members/{user_id} -> ошибка: {e}")
+            print(f"  GET /chats/{target}/members?user_ids={user_id} -> ошибка: {e}")
             continue
     print(f"  -> подписка НЕ видна (все попытки провалились)")
     return None

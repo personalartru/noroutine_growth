@@ -120,6 +120,15 @@ def call(method, path, query=None, body=None):
     return r.json()
 
 
+def forget_dialog(user_id):
+    """Удалить устаревший chat_id диалога (если пользователь удалил диалог с ботом)."""
+    dialogs = load_dialogs()
+    if str(user_id) in dialogs:
+        del dialogs[str(user_id)]
+        save_dialogs(dialogs)
+        print(f"Забыл устаревший диалог: user_id={user_id}")
+
+
 def send_direct(user_id, text, file_token=None, buttons=None, fallback_chat_id=None,
                 chat_id=None):
     """Личное сообщение пользователю.
@@ -127,6 +136,7 @@ def send_direct(user_id, text, file_token=None, buttons=None, fallback_chat_id=N
     В MAX chat_id диалога НЕ равен user_id: писать нужно на chat_id
     (recipient.chat_id в событии), иначе 404 chat.not.found.
     """
+    original_user_id = user_id
     user_id = chat_id or user_id
     body = {"text": text, "format": "html", "notify": True}
     attachments = []
@@ -147,6 +157,9 @@ def send_direct(user_id, text, file_token=None, buttons=None, fallback_chat_id=N
             return True
         except RuntimeError as e:
             print(f"Личка недоступна ({target}):", e)
+            # Если диалог удалён (404 chat.not.found) -> забыть его
+            if "chat.not.found" in str(e) and target == chat_id:
+                forget_dialog(original_user_id)
     return False
 
 
@@ -203,18 +216,27 @@ def respond(user_id, chat_id, post_id, chat_type, text, file_token=None, buttons
     print(f"respond: user={user_id}, chat={chat_id}, post={post_id}, type={chat_type}")
     if buttons:
         buttons = list(buttons) + [[BTN_CHANNEL]]
-    if chat_id and send_direct(user_id, text, file_token=file_token, buttons=buttons,
-                               chat_id=chat_id):
-        print(f"respond: личка доставлена -> комментарий не нужен")
-        return True
+    if chat_id:
+        print(f"respond: пытаюсь отправить в личку (chat_id={chat_id})")
+        if send_direct(user_id, text, file_token=file_token, buttons=buttons,
+                       chat_id=chat_id):
+            print(f"respond: личка доставлена -> комментарий не нужен")
+            return True
+        else:
+            print(f"respond: личка недоступна -> попробую комментарий")
+    else:
+        print(f"respond: chat_id неизвестен -> попробую комментарий")
 
     if post_id:
+        print(f"respond: публикую комментарий под {post_id}")
         bridge = (
             "\n\nЧтобы получить архив с 5 n8n-воркфлоу и ответ по вашей задаче — "
             f"откройте бота {bot_display_name()} в поиске MAX и напишите /start. "
             f"Прямая ссылка: {bot_link('lead')}"
         )
         return send_comment(post_id, text + bridge)
+    else:
+        print(f"respond: post_id отсутствует -> не могу опубликовать комментарий")
 
     if chat_type == "channel":
         print("Пропускаю ответ: это канал, постинг из лид-бота запрещён")

@@ -45,12 +45,15 @@ def main():
 
     removed = 0
     scanned = 0
-    to_param = None
+    from_param = None
+    last_oldest = None
 
     for page in range(MAX_PAGES):
+        # В MAX: from — «время, до которого берём сообщения» (старые),
+        # to — «начиная с этого» (новые). Чтобы идти вглубь истории, снижаем from.
         params = {"chat_id": ADMIN_CHAT_ID, "count": 100}
-        if to_param is not None:
-            params["to"] = to_param
+        if from_param is not None:
+            params["from"] = from_param
         r = api_get(params)
         if r.status_code != 200:
             print("Не удалось получить историю:", r.status_code, r.text[:200])
@@ -78,10 +81,12 @@ def main():
         if not timestamps:
             break
         oldest = min(timestamps)
-        if oldest <= 0:
+        if oldest <= 0 or oldest == last_oldest:
+            print("Дальше идти некуда — история кончилась")
             break
-        to_param = oldest - 1
-        print(f"Страница {page + 1}: просмотрено {len(messages)}, идём дальше (to={to_param})")
+        last_oldest = oldest
+        from_param = oldest - 1
+        print(f"Страница {page + 1}: просмотрено {len(messages)}, идём глубже (from={from_param})")
 
     print(f"Просмотрено сообщений: {scanned}, удалено служебных: {removed}")
 

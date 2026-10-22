@@ -1,17 +1,22 @@
 """Лид-магнит и заявки в MAX-канале.
 
-Бот MAX (@noroutine_bot) — администратор канала max.ru/channel_noroutine.
-Запускается в CI-цепочке и слушает обсуждение канала:
-
-- «/start» / «материал» → если человек подписан на канал, бот отдаёт ZIP
-  с 5 n8n-воркфлоу в личку; если нет — просит подписаться (кнопка);
+Сценарий 1:1 с Telegram-ботом (noroutine_growth/bot.py):
+- «/start» → если подписан: «Готово, спасибо за подписку!» + архив с 5 воркфлоу
+  и кнопкой «Хочу такую же под свой процесс»;
+- если не подписан: приветствие + кнопки «Подписаться на канал» и «Я подписался»;
+- кнопка «Я подписался» → проверка подписки и выдача архива;
+- кнопка «Хочу такую же под свой процесс» → просьба описать задачу;
 - любой другой текст → заявка: владельцу уходит уведомление с данными
-  пользователя, пользователю в личку — подтверждение и архив.
-  В канале бот не пишет никогда.
+  пользователя, пользователю в личку — «Принял запрос — изучаю и скоро свяжусь
+  с вами.» вместе с архивом.
+
+Особенности MAX: бот пишет только тем, кто его запустил, поэтому если личка
+недоступна, в чат обсуждения уходит кнопка-диплинк «Открыть бота».
 
 Запуск: python max_lead.py [--minutes N]
 """
 import base64
+import json
 import os
 import sys
 import time
@@ -23,24 +28,26 @@ TOKEN = os.environ["MAX_BOT_TOKEN"]
 CHANNEL_ID = os.environ["MAX_CHANNEL_ID"]
 ADMIN_CHAT_ID = os.environ.get("MAX_ADMIN_CHAT_ID", "")
 MATERIALS_PATH = os.environ.get("MATERIALS_PATH", "materials/noroutine-n8n-pack.zip")
-RUN_MINUTES = float(os.environ.get("BOT_RUN_MINUTES", "16") or 16)
+RUN_MINUTES = float(os.environ.get("BOT_RUN_MINUTES", "9") or 9)
 OFFSET_FILE = os.environ.get("MAX_OFFSET_FILE", ".max_offset")
 PENDING_FILE = os.environ.get("MAX_PENDING_FILE", ".max_pending.json")
 BOT_USERNAME = os.environ.get("MAX_BOT_USERNAME", "")
 
+# ── Тексты (совпадают с Telegram-ботом) ──────────────────────────────────────
 TEXT_HELLO = (
-    "Привет! Это бот канала «No ! Routine» — про автоматизацию рутины "
-    "в digital и проектных командах.\n\n"
-    "Внутри — 5 готовых n8n-воркфлоу: заявки из форм в Яндекс Трекере, "
-    "автоназначение задач, боты обратной связи в Telegram и MAX, выгрузка "
-    "в Google Sheets, ежедневные отчёты и приём лидов по REST.\n\n"
-    "Материал бесплатный — нужно быть подписчиком канала."
+    "Привет! Это бот канала «No ! Routine» — про автоматизацию рутины в "
+    "проектном управлении и digital.\n\n"
+    "Внутри — 5 готовых n8n-воркфлоу, которые закрывают типовую рутину:\n"
+    "заявки из форм, задачи в Яндекс Трекере, статусы, AI-комментарии, "
+    "выгрузка в Google Sheets, боты обратной связи в Telegram и MAX, "
+    "ежедневные отчёты и приём лидов по REST.\n\n"
+    "Материал бесплатный — нужно только быть подписанным на канал."
 )
 
 TEXT_AFTER_SUB = (
     "Готово, спасибо за подписку! Отправляю сборку шаблонов.\n\n"
-    "Если нужна автоматизация под ваш конкретный процесс (а не готовый "
-    "шаблон) — напишите, разберу и соберу под вас."
+    "Если нужна автоматизация под ваш конкретный процесс (а не готовый шаблон) — "
+    "напишите, разберу и соберу под вас."
 )
 
 TEXT_REQUEST_SENT = (
@@ -49,18 +56,21 @@ TEXT_REQUEST_SENT = (
     "нужны первыми для автоматизации процессов, и их можно развернуть сразу."
 )
 
-TEXT_OPEN_BOT = "Откройте бота, чтобы получить архив и ответ по запросу 👇"
-
-TEXT_PACK = "5 готовых n8n-воркфлоу — импорт в n8n за минуту. Гайд внутри архива."
-
-BTN_SUB = {"type": "link", "text": "Подписаться на канал", "url": "https://max.ru/channel_noroutine"}
-BTN_TASK = {"type": "callback", "text": "Хочу такую же под свой процесс", "payload": "want_task"}
-
 TEXT_TASK_PROMPT = (
     "Отлично.! Опишите задачу одним сообщением: что сейчас делаете руками, "
     "какими системами пользуетесь и сколько времени это занимает. "
     "Я изучу ваш запрос и предложу решение."
 )
+
+TEXT_PACK = "5 готовых n8n-воркфлоу — импорт в n8n за минуту. Гайд внутри архива."
+
+TEXT_SUBSCRIBE_HINT = "Подпишись на канал — и сразу пришлю сборку воркфлоу."
+TEXT_NOT_SUBSCRIBED = "Подписка пока не видна. Подпишитесь и нажмите ещё раз."
+
+# ── Кнопки ───────────────────────────────────────────────────────────────────
+BTN_SUB = {"type": "link", "text": "Подписаться на канал", "url": "https://max.ru/channel_noroutine"}
+BTN_CHECK = {"type": "callback", "text": "Я подписался", "payload": "check_sub"}
+BTN_TASK = {"type": "callback", "text": "Хочу такую же под свой процесс", "payload": "want_task"}
 
 
 def bot_username():
@@ -83,6 +93,7 @@ def open_bot_button():
     return {"type": "link", "text": "Открыть бота и забрать архив", "url": bot_link("lead")}
 
 
+# ── API ──────────────────────────────────────────────────────────────────────
 def call(method, path, query=None, body=None):
     r = requests.request(
         method,
@@ -104,7 +115,7 @@ def send_direct(user_id, text, file_token=None, buttons=None, fallback_chat_id=N
     if file_token:
         attachments.append({"type": "file", "payload": {"token": file_token}})
     if buttons:
-        attachments.append({"type": "inline_keyboard", "payload": {"buttons": [buttons]}})
+        attachments.append({"type": "inline_keyboard", "payload": {"buttons": buttons}})
     if attachments:
         body["attachments"] = attachments
 
@@ -121,12 +132,12 @@ def send_direct(user_id, text, file_token=None, buttons=None, fallback_chat_id=N
     return False
 
 
-def notify_in_chat(chat_id, text, buttons=None):
+def send_to_chat(chat_id, text, buttons=None):
     """Запасной вариант: сообщение в чат обсуждения (в канал не пишем)."""
     try:
         body = {"text": text, "format": "html", "notify": True}
         if buttons:
-            body["attachments"] = [{"type": "inline_keyboard", "payload": {"buttons": [buttons]}}]
+            body["attachments"] = [{"type": "inline_keyboard", "payload": {"buttons": buttons}}]
         call("POST", "messages", query={"chat_id": chat_id}, body=body)
         print("Ответ в чат обсуждения:", chat_id)
         return True
@@ -135,12 +146,22 @@ def notify_in_chat(chat_id, text, buttons=None):
         return False
 
 
+def answer_callback(callback_id, text):
+    """Ответ на нажатие кнопки: POST /answers?callback_id=..."""
+    try:
+        call("POST", "answers", query={"callback_id": callback_id},
+             body={"message": {"text": text, "format": "html"}})
+        return True
+    except RuntimeError as e:
+        print("Не удалось ответить на callback:", e)
+        return False
+
+
 def upload_pack():
-    """Загрузка файла в MAX: два шага (проверено на живом API).
+    """Загрузка файла в MAX: два шага.
 
     1) POST /uploads?type=file -> {"url": ...}
     2) POST файла на этот url (multipart, поле data) -> {"fileId", "token"}
-    Токен из шага 2 подставляется в attachments.payload.token.
     """
     r = requests.post(f"{MAX_API}/uploads", params={"type": "file"},
                       headers={"Authorization": TOKEN}, timeout=60)
@@ -169,25 +190,19 @@ def upload_pack():
     return token
 
 
-def send_pack(user_id, chat_id=None):
-    """Выдаёт архив: сперва в личку, при неудаче — в чат обсуждения."""
+def deliver_material(user_id, source=None, chat_id=None):
+    """Выдаёт архив: в личку, при неудаче — в чат обсуждения."""
     token = upload_pack()
-    if send_direct(user_id, TEXT_PACK, file_token=token, buttons=BTN_TASK,
-                   fallback_chat_id=chat_id):
-        return True
-    if chat_id:
-        try:
-            call("POST", "messages", query={"chat_id": chat_id}, body={
-                "text": TEXT_PACK,
-                "format": "html",
-                "notify": True,
-                "attachments": [{"type": "file", "payload": {"token": token}}],
-            })
-            print("Архив отправлен в чат:", chat_id)
-            return True
-        except RuntimeError as e:
-            print("Не удалось отдать архив:", e)
-    return False
+    ok = send_direct(user_id, TEXT_PACK, file_token=token, buttons=[[BTN_TASK]],
+                     fallback_chat_id=chat_id)
+    if ok:
+        print("Архив выдан:", user_id)
+    elif chat_id:
+        send_to_chat(chat_id, TEXT_PACK, buttons=[[BTN_TASK]])
+    if ADMIN_CHAT_ID:
+        send_direct(ADMIN_CHAT_ID, f"Лид-магнит забрали: user_id={user_id}, "
+                                   f"источник={source or 'unknown'}")
+    return ok
 
 
 def is_subscribed(user_id):
@@ -228,20 +243,19 @@ def forward_to_admin(user_id, name, text, username=None):
         return False
 
 
+# ── Состояние ────────────────────────────────────────────────────────────────
 def load_pending():
-    import json as _json
     try:
         with open(PENDING_FILE, encoding="utf-8") as f:
-            return _json.load(f)
+            return json.load(f)
     except (OSError, ValueError):
         return {}
 
 
 def save_pending(pending):
-    import json as _json
     try:
         with open(PENDING_FILE, "w", encoding="utf-8") as f:
-            _json.dump(pending, f, ensure_ascii=False, indent=2)
+            json.dump(pending, f, ensure_ascii=False, indent=2)
     except OSError as e:
         print("Не удалось сохранить состояние заявок:", e)
 
@@ -262,87 +276,52 @@ def save_offset(offset):
         pass
 
 
-def handle_bot_started(event):
-    """Пользователь открыл бота по диплинку: отдаём архив в личку."""
-    user = event.get("user") or {}
-    user_id = user.get("user_id")
-    chat_id = event.get("chat_id") or user_id
-    payload = event.get("payload")
-    print("bot_started | user", user_id, "| payload", payload)
-
+# ── Обработчики ─────────────────────────────────────────────────────────────
+def handle_start(user_id, chat_id, text):
     pending = load_pending()
     request = pending.pop(str(user_id), None)
     save_pending(pending)
 
-    if request:
-        send_direct(user_id, TEXT_REQUEST_SENT, fallback_chat_id=chat_id)
-        send_pack(user_id, chat_id)
-    else:
+    state = is_subscribed(user_id)
+    if state:
         send_direct(user_id, TEXT_AFTER_SUB, fallback_chat_id=chat_id)
-        send_pack(user_id, chat_id)
+        deliver_material(user_id, "max", chat_id)
+        return
+    send_direct(user_id, TEXT_HELLO + "\n\n" + TEXT_SUBSCRIBE_HINT,
+                buttons=[[BTN_SUB], [BTN_CHECK]], fallback_chat_id=chat_id) or \
+        send_to_chat(chat_id, TEXT_HELLO + "\n\n" + TEXT_SUBSCRIBE_HINT,
+                     buttons=[[BTN_SUB], [BTN_CHECK]])
 
 
-def handle_callback(event):
-    """Пользователь нажал кнопку в MAX."""
-    callback = event.get("callback") or {}
-    payload = callback.get("payload")
+def handle_callback(callback):
+    payload = callback.get("payload") or ""
     callback_id = callback.get("callback_id")
     user = callback.get("user") or {}
     user_id = user.get("user_id")
-    message = event.get("message") or {}
-    recipient = message.get("recipient") or {}
-    chat_id = recipient.get("chat_id")
-    print(f"нажата кнопка | payload {payload} | callback_id {callback_id} | user {user_id}")
 
-    if payload != "want_task":
+    if payload == "want_task":
+        if not send_direct(user_id, TEXT_TASK_PROMPT):
+            answer_callback(callback_id, TEXT_TASK_PROMPT)
         return
 
-    if callback_id:
-        try:
-            call("POST", "answers", query={"callback_id": callback_id},
-                 body={"message": {"text": TEXT_TASK_PROMPT, "format": "html"}})
-        except RuntimeError as e:
-            print("Не удалось ответить на callback:", e)
-    if not send_direct(user_id, TEXT_TASK_PROMPT, fallback_chat_id=chat_id):
-        notify_in_chat(chat_id, TEXT_TASK_PROMPT)
-
-
-def handle_event(event):
-    kind = event.get("update_type") or event.get("type")
-    if kind == "bot_started":
-        handle_bot_started(event)
-        return
-    if kind == "message_callback":
-        handle_callback(event)
-        return
-    message = event.get("message") or {}
-    body = message.get("body") or {}
-    text = (body.get("text") or "").strip()
-    recipient = message.get("recipient") or {}
-    chat_id = recipient.get("chat_id")
-    chat_type = recipient.get("chat_type")
-    post_id = recipient.get("post_id")
-    sender = message.get("sender") or event.get("user") or {}
-    user_id = sender.get("user_id")
-    name = sender.get("name") or sender.get("first_name") or ""
-    username = sender.get("username")
-
-    print(f"событие {kind} | chat_type {chat_type} | user {user_id} | "
-          f"post_id(b64) {base64.b64encode(str(post_id).encode()).decode()} | "
-          f"текст: {text[:60]!r}")
-    if not text:
-        return
-
-    lowered = text.lower()
-    if lowered in ("/start", "старт", "начать", "материал", "/материал", "связки", "шаблоны", "воркфлоу"):
-        pending = load_pending()
-        request = pending.pop(str(user_id), None)
-        save_pending(pending)
+    if payload == "check_sub":
         if is_subscribed(user_id):
-            send_direct(user_id, TEXT_AFTER_SUB)
-            send_pack(user_id, chat_id)
-        elif not send_direct(user_id, TEXT_HELLO, buttons=BTN_SUB):
-            notify_in_chat(chat_id, TEXT_HELLO, buttons=BTN_SUB)
+            answer_callback(callback_id, TEXT_AFTER_SUB)
+            deliver_material(user_id, "bot-check")
+        else:
+            answer_callback(callback_id, TEXT_NOT_SUBSCRIBED)
+        return
+
+
+def handle_text(user_id, chat_id, name, username, text):
+    lowered = text.lower()
+    if lowered in ("/start", "старт", "начать", "/material", "/материал",
+                   "/materials", "/пакет", "материал", "связки", "шаблоны", "воркфлоу"):
+        handle_start(user_id, chat_id, text)
+        return
+
+    if lowered in ("/help", "/помощь", "помощь"):
+        send_direct(user_id, TEXT_HELLO, fallback_chat_id=chat_id)
         return
 
     if forward_to_admin(user_id, name, text, username):
@@ -355,14 +334,63 @@ def handle_event(event):
             token = upload_pack()
         except RuntimeError as e:
             print("Не удалось загрузить архив:", e)
-
-        if not send_direct(user_id, TEXT_REQUEST_SENT, file_token=token):
-            # личка недоступна: пользователь не запускал бота.
-            # Оставляем кнопку с диплинком — жмёт и попадает в диалог.
-            print("Личка недоступна, предлагаю открыть бота")
-            notify_in_chat(chat_id, TEXT_OPEN_BOT, buttons=open_bot_button())
+        if not send_direct(user_id, TEXT_REQUEST_SENT, file_token=token,
+                           fallback_chat_id=chat_id):
+            send_to_chat(chat_id, "Принял запрос и скоро мы с вами свяжемся!\n\n"
+                                 "Чтобы забрать архив с воркфлоу, откройте бота — кнопка ниже.",
+                         buttons=[[open_bot_button()]])
     else:
-        send_direct(user_id, "Запрос принят, скоро свяжемся.")
+        send_direct(user_id, "Запрос принят, скоро свяжемся. "
+                             "Для сбора шаблонов пришлите /start.",
+                    fallback_chat_id=chat_id)
+
+
+def handle_bot_started(event):
+    """Пользователь открыл бота по диплинку: отдаём архив в личку."""
+    user = event.get("user") or {}
+    user_id = user.get("user_id")
+    chat_id = event.get("chat_id") or user_id
+    print("bot_started | user", user_id, "| payload", event.get("payload"))
+
+    pending = load_pending()
+    request = pending.pop(str(user_id), None)
+    save_pending(pending)
+
+    send_direct(user_id, TEXT_AFTER_SUB, fallback_chat_id=chat_id)
+    deliver_material(user_id, "deep-link", chat_id)
+
+
+def handle_event(event):
+    kind = event.get("update_type") or event.get("type")
+
+    if kind == "bot_started":
+        handle_bot_started(event)
+        return
+
+    if kind == "message_callback":
+        callback = event.get("callback") or {}
+        print("событие message_callback | payload", callback.get("payload"),
+              "| user", (callback.get("user") or {}).get("user_id"))
+        handle_callback(callback)
+        return
+
+    message = event.get("message") or {}
+    body = message.get("body") or {}
+    text = (body.get("text") or "").strip()
+    recipient = message.get("recipient") or {}
+    chat_id = recipient.get("chat_id")
+    chat_type = recipient.get("chat_type")
+    sender = message.get("sender") or event.get("user") or {}
+    user_id = sender.get("user_id")
+    name = sender.get("name") or sender.get("first_name") or ""
+    username = sender.get("username")
+
+    print(f"событие {kind} | chat_type {chat_type} | user {user_id} | "
+          f"chat_id(b64) {base64.b64encode(str(chat_id).encode()).decode()} | "
+          f"текст: {text[:60]!r}")
+    if not text:
+        return
+    handle_text(user_id, chat_id, name, username, text)
 
 
 def main():

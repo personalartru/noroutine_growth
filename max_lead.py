@@ -200,10 +200,12 @@ def respond(user_id, chat_id, post_id, chat_type, text, file_token=None, buttons
     В канал (chat_type == "channel") ничего не отправляем — это публикация
     поста для всех подписчиков.
     """
+    print(f"respond: user={user_id}, chat={chat_id}, post={post_id}, type={chat_type}")
     if buttons:
         buttons = list(buttons) + [[BTN_CHANNEL]]
     if chat_id and send_direct(user_id, text, file_token=file_token, buttons=buttons,
                                chat_id=chat_id):
+        print(f"respond: личка доставлена -> комментарий не нужен")
         return True
 
     if post_id:
@@ -269,13 +271,19 @@ def deliver_material(user_id, source=None, chat_id=None, post_id=None, chat_type
 
 def is_subscribed(user_id):
     """Статус пользователя в канале: подписчик получит материал."""
+    print(f"Проверяю подписку: user_id={user_id}, CHANNEL_ID={CHANNEL_ID!r}")
     for target in (CHANNEL_ID, f"-{CHANNEL_ID.lstrip('-')}"):
         try:
             member = call("GET", f"chats/{target}/members/{user_id}")
-        except RuntimeError:
+            status = (member or {}).get("status")
+            print(f"  /chats/{target}/members/{user_id} -> status={status!r}")
+            result = status in ("creator", "administrator", "member", "restricted")
+            print(f"  -> подписка {'видна' if result else 'НЕ видна'}")
+            return result
+        except RuntimeError as e:
+            print(f"  /chats/{target}/members/{user_id} -> ошибка: {e}")
             continue
-        status = (member or {}).get("status")
-        return status in ("creator", "administrator", "member", "restricted")
+    print(f"  -> подписка НЕ видна (все попытки провалились)")
     return None
 
 
@@ -414,16 +422,20 @@ def handle_callback(callback):
     chat_id = dialog_for(user_id) or user_id
 
     if payload == "want_task":
+        print(f"want_task: user={user_id}, chat={chat_id}")
         if not send_direct(user_id, TEXT_TASK_PROMPT, buttons=[[BTN_CHANNEL]],
                            chat_id=chat_id):
             answer_callback(callback_id, TEXT_TASK_PROMPT)
         return
 
     if payload == "check_sub":
+        print(f"check_sub: user={user_id}, chat={chat_id}")
         if is_subscribed(user_id):
+            print("Подписка подтверждена -> отдаю архив")
             answer_callback(callback_id, TEXT_AFTER_SUB)
             deliver_material(user_id, "bot-check", chat_id, None, "dialog")
         else:
+            print("Подписка не найдена -> прошу подписаться")
             answer_callback(callback_id, TEXT_NOT_SUBSCRIBED)
         return
 

@@ -299,7 +299,7 @@ def main():
     api("deleteWebhook", drop_pending_updates=False)
     api("getMe")
     deadline = time.time() + RUN_MINUTES * 60 if RUN_MINUTES else None
-    print("Бот запущен (версия {code_sha()}), жду сообщения..." + (f" (лимит {RUN_MINUTES} мин)" if deadline else ""))
+    print(f"Бот запущен (версия {code_sha()}), жду сообщения..." + (f" (лимит {RUN_MINUTES} мин)" if deadline else ""))
     offset = load_offset()
     if offset:
         print("Продолжаю с offset", offset)

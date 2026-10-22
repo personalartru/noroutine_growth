@@ -51,7 +51,7 @@ TEXT_REQUEST_SENT = (
 
 BTN_SUB = {"text": "Подписаться на канал", "url": f"https://t.me/{CHANNEL_USERNAME.lstrip('@')}"}
 BTN_CHECK = {"text": "Я подписался", "callback_data": "check_sub"}
-BTN_TASK = {"text": "Хочу такую же под свой процесс", "callback_data": "want_task"}
+BTN_TASK = {"text": "Хочу такое же под свой процесс", "callback_data": "want_task"}
 BTN_CHANNEL = {"text": "Канал в MAX", "url": "https://max.ru/channel_noroutine"}
 
 TEXT_TASK_PROMPT = (

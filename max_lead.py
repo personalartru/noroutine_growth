@@ -72,6 +72,7 @@ TEXT_NOT_SUBSCRIBED = "Подписка пока не видна. Подпиши
 BTN_SUB = {"type": "link", "text": "Подписаться на канал", "url": "https://max.ru/channel_noroutine"}
 BTN_CHECK = {"type": "callback", "text": "Я подписался", "payload": "check_sub"}
 BTN_TASK = {"type": "callback", "text": "Хочу такую же под свой процесс", "payload": "want_task"}
+BTN_CHANNEL = {"type": "link", "text": "Канал в MAX", "url": "https://max.ru/channel_noroutine"}
 
 
 def bot_username():
@@ -181,11 +182,17 @@ def respond(user_id, chat_id, post_id, chat_type, text, file_token=None, buttons
     В канал (chat_type == "channel") ничего не отправляем — это публикация
     поста для всех подписчиков.
     """
+    if buttons:
+        buttons = list(buttons) + [[BTN_CHANNEL]]
     if send_direct(user_id, text, file_token=file_token, buttons=buttons):
         return True
 
     if post_id:
-        bridge = f"\n\nОткройте бота, чтобы забрать архив с воркфлоу: {bot_link('lead')}"
+        bridge = (
+            "\n\nЧтобы получить архив с 5 n8n-воркфлоу и ответ по вашей задаче — "
+            f"откройте бота @{bot_username()} в MAX и напишите /start. "
+            f"Прямая ссылка: {bot_link('lead')}"
+        )
         return send_comment(post_id, text + bridge)
 
     if chat_type == "channel":
@@ -406,8 +413,8 @@ def handle_bot_started(event):
     request = pending.pop(str(user_id), None)
     save_pending(pending)
 
-    send_direct(user_id, TEXT_AFTER_SUB)
-    deliver_material(user_id, "deep-link", chat_id)
+    send_direct(user_id, TEXT_AFTER_SUB, buttons=[[BTN_CHANNEL]])
+    deliver_material(user_id, "deep-link", chat_id, None, "dialog")
 
 
 def handle_event(event):
@@ -430,6 +437,7 @@ def handle_event(event):
     recipient = message.get("recipient") or {}
     chat_id = recipient.get("chat_id")
     chat_type = recipient.get("chat_type")
+    post_id = recipient.get("post_id")
     sender = message.get("sender") or event.get("user") or {}
     user_id = sender.get("user_id")
     name = sender.get("name") or sender.get("first_name") or ""

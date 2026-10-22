@@ -52,6 +52,7 @@ TEXT_REQUEST_SENT = (
 BTN_SUB = {"text": "Подписаться на канал", "url": f"https://t.me/{CHANNEL_USERNAME.lstrip('@')}"}
 BTN_CHECK = {"text": "Я подписался", "callback_data": "check_sub"}
 BTN_TASK = {"text": "Хочу такую же под свой процесс", "callback_data": "want_task"}
+BTN_CHANNEL = {"text": "Канал в MAX", "url": "https://max.ru/channel_noroutine"}
 
 TEXT_TASK_PROMPT = (
     "Отлично.! Опишите задачу одним сообщением: что сейчас делаете руками, "
@@ -120,7 +121,7 @@ def deliver_material(chat_id, source=None):
         chat_id,
         MATERIALS_PATH,
         "5 готовых n8n-воркфлоу — импорт в n8n за минуту. Гайд внутри архива.",
-        reply_markup={"inline_keyboard": [[BTN_TASK]]},
+        reply_markup={"inline_keyboard": [[BTN_TASK], [BTN_CHANNEL]]},
     )
     log_event(event="material_delivered", chat_id=chat_id, source=source)
     if ADMIN_CHAT_ID:
@@ -226,7 +227,7 @@ def handle_text(message):
         source = (message.get("text") or "").strip()
         delivered = forward_to_admin(user, source, source="bot")
         if delivered:
-            send_message(chat_id, TEXT_REQUEST_SENT)
+            send_message(chat_id, TEXT_REQUEST_SENT, buttons=[[BTN_CHANNEL]])
         else:
             send_message(chat_id, "Запрос принят, скоро свяжемся. "
                                   "Для сбора шаблонов пришлите /start.")

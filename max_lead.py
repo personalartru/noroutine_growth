@@ -229,12 +229,21 @@ def respond(user_id, chat_id, post_id, chat_type, text, file_token=None, buttons
 
     if post_id:
         print(f"respond: публикую комментарий под {post_id}")
-        bridge = (
-            "\n\nЧтобы получить архив с 5 n8n-воркфлоу и ответ по вашей задаче — "
-            f"откройте бота {bot_display_name()} в поиске MAX и напишите /start. "
-            f"Прямая ссылка: {bot_link('lead')}"
-        )
-        return send_comment(post_id, text + bridge)
+        try:
+            bridge = (
+                "\n\nЧтобы получить архив с 5 n8n-воркфлоу и ответ по вашей задаче — "
+                f"откройте бота {bot_display_name()} в поиске MAX и напишите /start. "
+                f"Прямая ссылка: {bot_link('lead')}"
+            )
+            print(f"respond: мост сформирован, вызываю send_comment()")
+            result = send_comment(post_id, text + bridge)
+            print(f"respond: send_comment вернул {result}")
+            return result
+        except Exception as e:
+            print(f"respond: ошибка при формировании/отправке комментария: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
     else:
         print(f"respond: post_id отсутствует -> не могу опубликовать комментарий")
 

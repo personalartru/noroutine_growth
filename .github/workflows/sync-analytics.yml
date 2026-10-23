@@ -8,55 +8,42 @@ on:
       - 'fetch_analytics.py'
   schedule:
     - cron: '0 */6 * * *'  # every 6 hours
-  workflow_dispatch:  # manual trigger
-  
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout noroutine_growth
         uses: actions/checkout@v4
-        with:
-          repository: personalartru/noroutine_growth
-          token: ${{ secrets.PUSH_PAT || secrets.GH_PAT || secrets.GITHUB_TOKEN }}
-      
-      - name: Checkout noroutine_posting
-        uses: actions/checkout@v4
-        with:
-          repository: personalartru/noroutine_posting
-          token: ${{ secrets.PUSH_PAT || secrets.GH_PAT || secrets.GITHUB_TOKEN }}
-          path: posting
-      
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
-      
+
       - name: Install dependencies
         run: pip install requests
-      
-      - name: Run analytics fetch
+
+      - name: Fetch analytics
         env:
           MAX_BOT_TOKEN: ${{ secrets.MAX_BOT_TOKEN }}
           TG_CHANNEL_USERNAME: noroutine2026
           MAX_CHANNEL_ID: -71062363105923
-        run: python3 fetch_analytics.py --out posting/analytics.json
-      
-      - name: Commit & push analytics.json
-        env:
-          GH_PAT: ${{ secrets.PUSH_PAT || secrets.GH_PAT }}
+        run: python3 fetch_analytics.py --out analytics.json
+
+      - name: Commit analytics.json
         run: |
-          cd posting
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          if [ -n "$GH_PAT" ]; then
-            git remote set-url origin https://x-access-token:${GH_PAT}@github.com/personalartru/noroutine_posting.git
-          fi
           git add analytics.json
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
             git commit -m "Analytics update: $(date -u '+%Y-%m-%d %H:%M')"
-            git push origin main
+            git push
             echo "analytics.json updated"
           fi

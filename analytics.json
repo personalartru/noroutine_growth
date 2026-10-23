@@ -1,26 +1,19 @@
 {
-  "updated_at": "2026-10-23T07:48:51+00:00",
+  "updated_at": "2026-10-23T19:14:06+00:00",
   "channels": {
     "telegram": {
       "subscribers": 18,
-      "total_views": 2988,
+      "total_views": 2994,
       "daily": [
         {
           "date": "2026-10-23",
-          "total_views": 2988,
-          "new_views": 2988,
+          "total_views": 2994,
+          "new_views": 6,
           "posts": 102,
           "subscribers": 18
         }
       ],
       "posts": [
-        {
-          "id": "10",
-          "date": "2022-08-02",
-          "views": 34,
-          "text": "",
-          "url": "https://t.me/noroutine2026/10"
-        },
         {
           "id": "11",
           "date": "2022-08-03",
@@ -668,14 +661,14 @@
         {
           "id": "143",
           "date": "2026-10-19",
-          "views": 4,
+          "views": 5,
           "text": "🚀   Какую AI-модель выбрать для автоматизации бизнес-процессов  в 2026 году  Проблема: Постоянная рутинная работа отнима",
           "url": "https://t.me/noroutine2026/143"
         },
         {
           "id": "144",
           "date": "2026-10-19",
-          "views": 3,
+          "views": 4,
           "text": "Сегодня разберём полезную функцию — автоматическое создание подзадач при смене статуса родительской задачи. Идеальное ре",
           "url": "https://t.me/noroutine2026/144"
         },
@@ -713,6 +706,203 @@
           "views": 4,
           "text": "🚀   Как измерить эффективность автоматизации   Проблема: Сколько времени уходит на рутинные задачи, а в итоге мы всё рав",
           "url": "https://t.me/noroutine2026/159"
+        },
+        {
+          "id": "161",
+          "date": "2026-10-23",
+          "views": 4,
+          "text": "🚀   Как Алиса AI делает HR-работу проще   Проблема: Рутинные задачи в HR отнимают кучу времени — анализ резюме, скрининг",
+          "url": "https://t.me/noroutine2026/161"
+        }
+      ]
+    },
+    "max": {
+      "subscribers": null,
+      "total_views": 254,
+      "daily": [
+        {
+          "date": "2026-10-23",
+          "total_views": 254,
+          "new_views": 254,
+          "posts": 25,
+          "subscribers": null
+        }
+      ],
+      "posts": [
+        {
+          "id": "mid.ffffbf5e8117157d019d365b105e00d2",
+          "date": "2026-03-28",
+          "views": 20,
+          "text": "https://rutube.ru/video/266f4784cbc6956660f878a1aaa3b89a/?r=wd",
+          "url": "https://max.ru/channel_noroutine/AZ02WxBeANI"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d019d3ab64060227d",
+          "date": "2026-03-29",
+          "views": 24,
+          "text": "Привет! Как дела?",
+          "url": "https://max.ru/channel_noroutine/AZ06tkBgIn0"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d019d3e4740753338",
+          "date": "2026-03-30",
+          "views": 22,
+          "text": "Тест",
+          "url": "https://max.ru/channel_noroutine/AZ0-R0B1Mzg"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d019d3e43f2090bc5",
+          "date": "2026-03-30",
+          "views": 23,
+          "text": "Тест",
+          "url": "https://max.ru/channel_noroutine/AZ0-Q_IJC8U"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d019d67ce164b5543",
+          "date": "2026-04-07",
+          "views": 24,
+          "text": "https://rutube.ru/video/9717098d5b775538052c254cd4719b14/",
+          "url": "https://max.ru/channel_noroutine/AZ1nzhZLVUM"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d019e6e7c384269cc",
+          "date": "2026-05-28",
+          "views": 19,
+          "text": "Яндекс Трекер: автоматизация и интеграции. Быстрый старт | Часть 1 https://rutube.ru/video/b57b0c7f1c39bc5a3b1ae1416209c",
+          "url": "https://max.ru/channel_noroutine/AZ5ufDhCacw"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d019ea36fb3457bc3",
+          "date": "2026-06-07",
+          "views": 20,
+          "text": "https://vkvideo.ru/video-236947565_456239020",
+          "url": "https://max.ru/channel_noroutine/AZ6jb7NFe8M"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a0fe6ccd7b2b2b",
+          "date": "2026-10-02",
+          "views": 13,
+          "text": "https://rutube.ru/video/1dce1a567e36ed3f981d1da3d21e9387/",
+          "url": "https://max.ru/channel_noroutine/AaD-bM17Kys"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a10d71ed6562af",
+          "date": "2026-10-05",
+          "views": 12,
+          "text": "https://rutube.ru/video/8a274965cba876ebbcb14c74b0aec75e/",
+          "url": "https://max.ru/channel_noroutine/AaENce1lYq8"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a1446ab2321551",
+          "date": "2026-10-16",
+          "views": 5,
+          "text": "🔒 Как обезопасить данные на облачных хранилищах?\n\nСбой в Яндекс Облаке и Яндекс Диске стал настоящим испытанием для мног",
+          "url": "https://max.ru/channel_noroutine/AaFEarIyFVE"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a143eec2f6295e",
+          "date": "2026-10-16",
+          "views": 5,
+          "text": "🚀 Яндекс Трекер: локальное поле в задаче — зачем и как его обновить?\n\nЗачем это нужно? В быстро меняющемся мире автомати",
+          "url": "https://max.ru/channel_noroutine/AaFD7sL2KV4"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a142ddbec31728",
+          "date": "2026-10-16",
+          "views": 5,
+          "text": "🚀 5 трендов автоматизации в IT (октябрь 2026)\n\nПроблема: рутина съедает до 30% времени. Вместо фич мы сводим отчеты и от",
+          "url": "https://max.ru/channel_noroutine/AaFC3b7DFyg"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a14a33ed01474a",
+          "date": "2026-10-17",
+          "views": 5,
+          "text": "🚀 OpenCode: автоматизация процессов на максимум!\n\nВремя — это самый ценный ресурс для IT-команд и digital-агентств. Авто",
+          "url": "https://max.ru/channel_noroutine/AaFKM-0BR0o"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a14ff887680d24",
+          "date": "2026-10-18",
+          "views": 4,
+          "text": "🚀 Яндекс Трекер: автокомментарии и приветственные сообщения при создании задачи\n\nВ нашем деле, где каждая секунда на сче",
+          "url": "https://max.ru/channel_noroutine/AaFP-IdoDSQ"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a155ff95954ee0",
+          "date": "2026-10-19",
+          "views": 5,
+          "text": "https://rutube.ru/video/f359757f30215fa8b05cc6f7f1e7157a/\n\n#ЯндексТрекер #автоматизация #управлениезадачами",
+          "url": "https://max.ru/channel_noroutine/AaFV_5WVTuA"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a154344b3c6b99",
+          "date": "2026-10-19",
+          "views": 5,
+          "text": "🚀 Какую AI-модель выбрать для автоматизации бизнес-процессов в 2026 году\n\nПроблема: Постоянная рутинная работа отнимает ",
+          "url": "https://max.ru/channel_noroutine/AaFUNEs8a5k"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a1597c0b1669f5",
+          "date": "2026-10-20",
+          "views": 7,
+          "text": "🚀 Оптимизация поиска задач в Яндекс Трекере\n\nПроблема: Поиск нужных задач в Яндекс Трекере может занять много времени и ",
+          "url": "https://max.ru/channel_noroutine/AaFZfAsWafU"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a15f46f61448bb",
+          "date": "2026-10-21",
+          "views": 6,
+          "text": "💬 Вопрос аудитории\n\nЧто у вас сейчас автоматизировано, а что всё ещё делается руками каждый день?\n\nНапишите в комментари",
+          "url": "https://max.ru/channel_noroutine/AaFfRvYUSLs"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a15f46f17f5846",
+          "date": "2026-10-21",
+          "views": 6,
+          "text": "📦 5 готовых n8n-воркфлоу — бесплатно\n\nВнутри:\n1. Яндекс Трекер: вебхук → новая задача\n2. Яндекс Трекер: автоназначение о",
+          "url": "https://max.ru/channel_noroutine/AaFfRvF_WEY"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a15f46edb46f2e",
+          "date": "2026-10-21",
+          "views": 4,
+          "text": "🤖 Видео-разбор: бот обратной связи в MAX + Google Таблицы\n\nЗа 10 минут: бот в MAX принимает сообщение, пишет его в табли",
+          "url": "https://max.ru/channel_noroutine/AaFfRu20by4"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a15f46e97e6924",
+          "date": "2026-10-21",
+          "views": 4,
+          "text": "⏱ Кейс: заявки из Яндекс Форм больше не заводятся руками\n\nБыло: 3 часа в неделю — сотрудник переносил ответы из формы в ",
+          "url": "https://max.ru/channel_noroutine/AaFfRul-aSQ"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a15f46e31339b3",
+          "date": "2026-10-21",
+          "views": 5,
+          "text": "🚀 No ! Routine — автоматизация рутины в digital и проектных командах\n\nЗдесь разбираю, как убрать ручные операции из рабо",
+          "url": "https://max.ru/channel_noroutine/AaFfRuMTObM"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a163ab01931306",
+          "date": "2026-10-22",
+          "views": 5,
+          "text": "🚀 Как измерить эффективность автоматизации\n\nПроблема: Сколько времени уходит на рутинные задачи, а в итоге мы всё равно ",
+          "url": "https://max.ru/channel_noroutine/AaFjqwGTEwY"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a168bd61941fea",
+          "date": "2026-10-23",
+          "views": 3,
+          "text": "🚀 Как Алиса AI делает HR-работу проще\n\nПроблема: Рутинные задачи в HR отнимают кучу времени — анализ резюме, скрининг ка",
+          "url": "https://max.ru/channel_noroutine/AaFovWGUH-o"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a16773668672bc",
+          "date": "2026-10-23",
+          "views": 3,
+          "text": "Канал принимает донаты\n\nНажмите на кнопку, чтобы отправить донат и помочь каналу",
+          "url": "https://max.ru/channel_noroutine/AaFnc2aGcrw"
         }
       ]
     }

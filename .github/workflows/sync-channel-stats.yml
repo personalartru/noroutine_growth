@@ -1,0 +1,52 @@
+name: Sync MAX Channel Stats
+
+on:
+  schedule:
+    # Каждые 6 часов
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: personalartru/noroutine_growth
+          path: growth
+
+      - uses: actions/checkout@v4
+        with:
+          repository: personalartru/noroutine_posting
+          path: posting
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Fetch MAX channel stats
+        working-directory: growth
+        env:
+          MAX_BOT_TOKEN: ${{ secrets.MAX_BOT_TOKEN }}
+          MAX_CHANNEL_ID: ${{ secrets.MAX_CHANNEL_ID || '-71062363105923' }}
+        run: |
+          python3 fetch_channel_stats.py 100 > ../posting/max_channel_stats.json
+          echo "✓ Статистика собрана: $(wc -l < ../posting/max_channel_stats.json) строк"
+
+      - name: Commit stats to noroutine_posting
+        working-directory: posting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add max_channel_stats.json
+          if git diff --staged --quiet; then
+            echo "Нет изменений"
+          else
+            git commit -m "chore: обновление статистики MAX-канала"
+            git push
+          fi

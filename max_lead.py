@@ -421,6 +421,23 @@ def dialog_for(user_id):
     return load_dialogs().get(str(user_id))
 
 
+def remember_active_user(user_id):
+    """Запомнить, что пользователь активен (нажал кнопку 'Я тут!')."""
+    import time
+    active_file = ".max_active_users.json"
+    try:
+        with open(active_file, encoding="utf-8") as f:
+            active = json.load(f)
+    except (OSError, ValueError):
+        active = {}
+    active[str(user_id)] = time.time()
+    try:
+        with open(active_file, "w", encoding="utf-8") as f:
+            json.dump(active, f, ensure_ascii=False, indent=2)
+    except OSError as e:
+        print("Не удалось сохранить активных пользователей:", e)
+
+
 def remember_comment_chat(chat_id):
     """Запоминаем чат обсуждений канала: туда бот отвечает, если личка недоступна."""
     try:
@@ -486,6 +503,12 @@ def handle_callback(callback):
         else:
             print("Подписка не найдена -> прошу подписаться")
             answer_callback(callback_id, TEXT_NOT_SUBSCRIBED)
+        return
+
+    if payload == "im_active":
+        # Реактивация: пользователь нажал "Я тут!" в посте канала
+        remember_active_user(user_id)
+        answer_callback(callback_id, "Отлично! Спасибо за отклик 👋")
         return
 
 

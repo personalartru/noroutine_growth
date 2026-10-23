@@ -1,0 +1,58 @@
+name: Reactivate Subscribers
+
+on:
+  schedule:
+    # Каждые 2 недели в воскресенье 10:00 UTC (13:00 МСК)
+    - cron: '0 10 * * 0'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Действие (publish - пост с кнопкой, reactivate - отправка сообщений)'
+        required: true
+        default: 'publish'
+        type: choice
+        options:
+          - publish
+          - reactivate
+
+jobs:
+  reactivate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Restore cache (active users + dialogs)
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .max_active_users.json
+            .max_dialogs.json
+          key: reactivate-cache-${{ github.run_id }}
+          restore-keys: |
+            reactivate-cache-
+
+      - name: Run reactivation
+        env:
+          MAX_BOT_TOKEN: ${{ secrets.MAX_BOT_TOKEN }}
+          MAX_CHANNEL_ID: ${{ secrets.MAX_CHANNEL_ID || '-71062363105923' }}
+          MAX_ADMIN_CHAT_ID: ${{ secrets.MAX_ADMIN_CHAT_ID }}
+        run: |
+          ACTION="${{ github.event.inputs.action || 'publish' }}"
+          python3 reactivate_subscribers.py "$ACTION"
+
+      - name: Save cache (active users + dialogs)
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: |
+            .max_active_users.json
+            .max_dialogs.json
+          key: reactivate-cache-${{ github.run_id }}

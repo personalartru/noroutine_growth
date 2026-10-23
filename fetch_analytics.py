@@ -20,7 +20,10 @@ import re
 import sys
 import time
 import urllib.request
+import urllib3
 from datetime import datetime, timezone
+
+urllib3.disable_warnings()
 
 import requests
 
@@ -43,7 +46,8 @@ def max_call(method, path, query=None):
     url = f"https://platform-api2.max.ru/{path}"
     try:
         r = requests.request(method, url, params=query,
-                             headers={"Authorization": MAX_BOT_TOKEN}, timeout=30)
+                             headers={"Authorization": MAX_BOT_TOKEN},
+                             timeout=30, verify=False)
         if r.status_code != 200:
             log(f"MAX: {method} {path} → HTTP {r.status_code}: {r.text[:200]}")
             return None

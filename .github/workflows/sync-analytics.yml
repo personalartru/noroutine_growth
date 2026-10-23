@@ -18,13 +18,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: personalartru/noroutine_growth
-          token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PUSH_PAT || secrets.GH_PAT || secrets.GITHUB_TOKEN }}
       
       - name: Checkout noroutine_posting
         uses: actions/checkout@v4
         with:
           repository: personalartru/noroutine_posting
-          token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PUSH_PAT || secrets.GH_PAT || secrets.GITHUB_TOKEN }}
           path: posting
       
       - name: Setup Python
@@ -43,10 +43,15 @@ jobs:
         run: python3 fetch_analytics.py --out posting/analytics.json
       
       - name: Commit & push analytics.json
+        env:
+          GH_PAT: ${{ secrets.PUSH_PAT || secrets.GH_PAT }}
         run: |
           cd posting
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
+          if [ -n "$GH_PAT" ]; then
+            git remote set-url origin https://x-access-token:${GH_PAT}@github.com/personalartru/noroutine_posting.git
+          fi
           git add analytics.json
           if git diff --cached --quiet; then
             echo "No changes to commit"

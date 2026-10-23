@@ -83,10 +83,13 @@ def fetch_max():
     subscribers = None
     chat = max_call("GET", f"chats/{MAX_CHANNEL_ID}")
     if chat:
-        for key in ("subscribers_count", "members_count", "subscribers"):
+        for key in ("subscribers_count", "members_count", "participants_count",
+                    "members", "subscribers"):
             if chat.get(key) is not None:
                 subscribers = int(chat[key])
                 break
+        if subscribers is None:
+            log(f"MAX: счётчик подписчиков не найден, поля чата: {sorted(chat.keys())}")
     else:
         log("MAX: подписчики недоступны")
     return {"posts": sorted(posts, key=lambda p: p["date"]), "subscribers": subscribers}

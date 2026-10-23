@@ -1,0 +1,40 @@
+name: Sync analytics (Telegram + MAX)
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # every 6 hours
+  workflow_dispatch:  # manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout noroutine_growth
+        uses: actions/checkout@v4
+        with:
+          repository: personalartru/noroutine_growth
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      # Собрать аналитику и вывести результаты
+      - name: Run analytics fetch
+        env:
+          MAX_BOT_TOKEN: ${{ secrets.MAX_BOT_TOKEN }}
+          TG_CHANNEL_USERNAME: noroutine2026
+          MAX_CHANNEL_ID: -71062363105923
+        run: |
+          python3 fetch_analytics.py --out /tmp/analytics.json
+          echo "=== Analytics summary ==="
+          python3 -c "import json; d=json.load(open('/tmp/analytics.json')); 
+          tg=d.get('channels',{}).get('telegram',{}); 
+          mx=d.get('channels',{}).get('max',{}); 
+          print(f'Telegram: views={tg.get(\"total_views\",0)}, subscribers={tg.get(\"subscribers\",0)}')
+          if mx: print(f'MAX: views={mx.get(\"total_views\",0)}, subscribers={mx.get(\"subscribers\",0)}')
+          else: print('MAX: no data')"

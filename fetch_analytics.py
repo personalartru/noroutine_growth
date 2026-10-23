@@ -41,21 +41,28 @@ def log(msg):
 
 def max_call(method, path, query=None):
     url = f"https://platform-api2.max.ru/{path}"
-    r = requests.request(method, url, params=query,
-                         headers={"Authorization": MAX_BOT_TOKEN}, timeout=30)
-    if r.status_code != 200:
-        raise RuntimeError(f"{method} {path}: HTTP {r.status_code} {r.text[:200]}")
-    return r.json()
+    try:
+        r = requests.request(method, url, params=query,
+                             headers={"Authorization": MAX_BOT_TOKEN}, timeout=30)
+        if r.status_code != 200:
+            log(f"MAX: {method} {path} → HTTP {r.status_code}: {r.text[:200]}")
+            return None
+        return r.json()
+    except Exception as e:
+        log(f"MAX: error calling {method} {path}: {e}")
+        return None
 
 
 def fetch_max():
     """Посты MAX-канала: views, дата, текст. Подписчики из GET /chats."""
+    if not MAX_BOT_TOKEN:
+        log("MAX: токен не задан, пропускаем")
+        return None
     posts = []
-    try:
-        resp = max_call("GET", "messages",
-                        query={"chat_id": MAX_CHANNEL_ID, "count": 100})
-    except RuntimeError as e:
-        log(f"MAX: не удалось получить сообщения: {e}")
+    resp = max_call("GET", "messages",
+                    query={"chat_id": MAX_CHANNEL_ID, "count": 100})
+    if not resp:
+        log("MAX: не удалось получить сообщения")
         return None
     for msg in resp.get("messages", []):
         ts = msg.get("timestamp", 0)
@@ -70,14 +77,14 @@ def fetch_max():
         })
 
     subscribers = None
-    try:
-        chat = max_call("GET", f"chats/{MAX_CHANNEL_ID}")
+    chat = max_call("GET", f"chats/{MAX_CHANNEL_ID}")
+    if chat:
         for key in ("subscribers_count", "members_count", "subscribers"):
             if chat.get(key) is not None:
                 subscribers = int(chat[key])
                 break
-    except RuntimeError as e:
-        log(f"MAX: подписчики недоступны: {e}")
+    else:
+        log("MAX: подписчики недоступны")
     return {"posts": sorted(posts, key=lambda p: p["date"]), "subscribers": subscribers}
 
 
@@ -211,18 +218,15 @@ def main():
     else:
         log("Telegram: данные не получены, оставляем прежние")
 
-    if MAX_BOT_TOKEN:
-        mx = fetch_max()
-        if mx:
-            channels["max"] = update_history(channels.get("max"), "max",
-                                             mx["posts"], mx["subscribers"])
-            log(f"MAX: {len(mx['posts'])} постов, "
-                f"{channels['max']['total_views']} просмотров, "
-                f"{mx['subscribers']} подписчиков")
-        else:
-            log("MAX: данные не получены, оставляем прежние")
+    mx = fetch_max()
+    if mx:
+        channels["max"] = update_history(channels.get("max"), "max",
+                                         mx["posts"], mx["subscribers"])
+        log(f"MAX: {len(mx['posts'])} постов, "
+            f"{channels['max']['total_views']} просмотров, "
+            f"{mx['subscribers']} подписчиков")
     else:
-        log("MAX: токен не задан, пропускаем")
+        log("MAX: данные не получены, оставляем прежние")
 
     result = {
         "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),

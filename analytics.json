@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-10-24T10:33:01+00:00",
+  "updated_at": "2026-10-24T15:36:40+00:00",
   "channels": {
     "telegram": {
       "subscribers": 18,
-      "total_views": 2996,
+      "total_views": 2999,
       "daily": [
         {
           "date": "2026-10-23",
@@ -14,20 +14,13 @@
         },
         {
           "date": "2026-10-24",
-          "total_views": 2996,
-          "new_views": 0,
+          "total_views": 2999,
+          "new_views": 3,
           "posts": 103,
           "subscribers": 18
         }
       ],
       "posts": [
-        {
-          "id": "11",
-          "date": "2022-08-03",
-          "views": 32,
-          "text": "ЯНДЕКС ТРЕКЕР: С ЧЕГО НАЧАТЬ?   Хочу поделиться своим опытом использования систем управления проектами/задачами.  Дольше",
-          "url": "https://t.me/noroutine2026/11"
-        },
         {
           "id": "12",
           "date": "2022-08-08",
@@ -720,12 +713,19 @@
           "views": 4,
           "text": "🚀   Как Алиса AI делает HR-работу проще   Проблема: Рутинные задачи в HR отнимают кучу времени — анализ резюме, скрининг",
           "url": "https://t.me/noroutine2026/161"
+        },
+        {
+          "id": "163",
+          "date": "2026-10-24",
+          "views": 3,
+          "text": "🚀   Управление нагрузкой команды в Яндекс Трекере   Проблема: Из-за неэффективного управления задачами команда часто пер",
+          "url": "https://t.me/noroutine2026/163"
         }
       ]
     },
     "max": {
       "subscribers": 7,
-      "total_views": 254,
+      "total_views": 263,
       "daily": [
         {
           "date": "2026-10-23",
@@ -736,8 +736,8 @@
         },
         {
           "date": "2026-10-24",
-          "total_views": 254,
-          "new_views": 0,
+          "total_views": 263,
+          "new_views": 9,
           "posts": 25,
           "subscribers": 7
         }
@@ -858,49 +858,49 @@
         {
           "id": "mid.ffffbf5e8117157d01a1597c0b1669f5",
           "date": "2026-10-20",
-          "views": 7,
+          "views": 8,
           "text": "🚀 Оптимизация поиска задач в Яндекс Трекере\n\nПроблема: Поиск нужных задач в Яндекс Трекере может занять много времени и ",
           "url": "https://max.ru/channel_noroutine/AaFZfAsWafU"
         },
         {
           "id": "mid.ffffbf5e8117157d01a15f46f61448bb",
           "date": "2026-10-21",
-          "views": 6,
+          "views": 7,
           "text": "💬 Вопрос аудитории\n\nЧто у вас сейчас автоматизировано, а что всё ещё делается руками каждый день?\n\nНапишите в комментари",
           "url": "https://max.ru/channel_noroutine/AaFfRvYUSLs"
         },
         {
           "id": "mid.ffffbf5e8117157d01a15f46f17f5846",
           "date": "2026-10-21",
-          "views": 6,
+          "views": 7,
           "text": "📦 5 готовых n8n-воркфлоу — бесплатно\n\nВнутри:\n1. Яндекс Трекер: вебхук → новая задача\n2. Яндекс Трекер: автоназначение о",
           "url": "https://max.ru/channel_noroutine/AaFfRvF_WEY"
         },
         {
           "id": "mid.ffffbf5e8117157d01a15f46edb46f2e",
           "date": "2026-10-21",
-          "views": 4,
+          "views": 5,
           "text": "🤖 Видео-разбор: бот обратной связи в MAX + Google Таблицы\n\nЗа 10 минут: бот в MAX принимает сообщение, пишет его в табли",
           "url": "https://max.ru/channel_noroutine/AaFfRu20by4"
         },
         {
           "id": "mid.ffffbf5e8117157d01a15f46e97e6924",
           "date": "2026-10-21",
-          "views": 4,
+          "views": 5,
           "text": "⏱ Кейс: заявки из Яндекс Форм больше не заводятся руками\n\nБыло: 3 часа в неделю — сотрудник переносил ответы из формы в ",
           "url": "https://max.ru/channel_noroutine/AaFfRul-aSQ"
         },
         {
           "id": "mid.ffffbf5e8117157d01a15f46e31339b3",
           "date": "2026-10-21",
-          "views": 5,
+          "views": 6,
           "text": "🚀 No ! Routine — автоматизация рутины в digital и проектных командах\n\nЗдесь разбираю, как убрать ручные операции из рабо",
           "url": "https://max.ru/channel_noroutine/AaFfRuMTObM"
         },
         {
           "id": "mid.ffffbf5e8117157d01a163ab01931306",
           "date": "2026-10-22",
-          "views": 5,
+          "views": 6,
           "text": "🚀 Как измерить эффективность автоматизации\n\nПроблема: Сколько времени уходит на рутинные задачи, а в итоге мы всё равно ",
           "url": "https://max.ru/channel_noroutine/AaFjqwGTEwY"
         },
@@ -917,6 +917,13 @@
           "views": 3,
           "text": "Канал принимает донаты\n\nНажмите на кнопку, чтобы отправить донат и помочь каналу",
           "url": "https://max.ru/channel_noroutine/AaFnc2aGcrw"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a16dc355f7234e",
+          "date": "2026-10-24",
+          "views": 2,
+          "text": "🚀 Управление нагрузкой команды в Яндекс Трекере\n\nПроблема: Из-за неэффективного управления задачами команда часто перегр",
+          "url": "https://max.ru/channel_noroutine/AaFtw1X3I04"
         }
       ]
     }

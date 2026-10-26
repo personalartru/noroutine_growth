@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-10-25T20:34:04+00:00",
+  "updated_at": "2026-10-26T03:53:19+00:00",
   "channels": {
     "telegram": {
       "subscribers": 18,
-      "total_views": 3001,
+      "total_views": 3002,
       "daily": [
         {
           "date": "2026-10-23",
@@ -23,6 +23,13 @@
           "date": "2026-10-25",
           "total_views": 3001,
           "new_views": 2,
+          "posts": 104,
+          "subscribers": 18
+        },
+        {
+          "date": "2026-10-26",
+          "total_views": 3002,
+          "new_views": 1,
           "posts": 104,
           "subscribers": 18
         }
@@ -710,7 +717,7 @@
         {
           "id": "159",
           "date": "2026-10-22",
-          "views": 4,
+          "views": 5,
           "text": "🚀   Как измерить эффективность автоматизации   Проблема: Сколько времени уходит на рутинные задачи, а в итоге мы всё рав",
           "url": "https://t.me/noroutine2026/159"
         },
@@ -750,6 +757,13 @@
         },
         {
           "date": "2026-10-25",
+          "total_views": 264,
+          "new_views": 0,
+          "posts": 26,
+          "subscribers": 7
+        },
+        {
+          "date": "2026-10-26",
           "total_views": 264,
           "new_views": 0,
           "posts": 26,

@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-26T03:53:19+00:00",
+  "updated_at": "2026-10-26T12:30:04+00:00",
   "channels": {
     "telegram": {
       "subscribers": 18,
@@ -29,7 +29,7 @@
         {
           "date": "2026-10-26",
           "total_views": 3002,
-          "new_views": 1,
+          "new_views": 0,
           "posts": 104,
           "subscribers": 18
         }
@@ -739,7 +739,7 @@
     },
     "max": {
       "subscribers": 7,
-      "total_views": 264,
+      "total_views": 265,
       "daily": [
         {
           "date": "2026-10-23",
@@ -764,8 +764,8 @@
         },
         {
           "date": "2026-10-26",
-          "total_views": 264,
-          "new_views": 0,
+          "total_views": 265,
+          "new_views": 1,
           "posts": 26,
           "subscribers": 7
         }
@@ -949,7 +949,7 @@
         {
           "id": "mid.ffffbf5e8117157d01a16dc355f7234e",
           "date": "2026-10-24",
-          "views": 3,
+          "views": 4,
           "text": "🚀 Управление нагрузкой команды в Яндекс Трекере\n\nПроблема: Из-за неэффективного управления задачами команда часто перегр",
           "url": "https://max.ru/channel_noroutine/AaFtw1X3I04"
         }

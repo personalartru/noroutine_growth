@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-10-27T17:42:52+00:00",
+  "updated_at": "2026-10-27T21:57:19+00:00",
   "channels": {
     "telegram": {
       "subscribers": 18,
-      "total_views": 3024,
+      "total_views": 3025,
       "daily": [
         {
           "date": "2026-10-23",
@@ -35,8 +35,8 @@
         },
         {
           "date": "2026-10-27",
-          "total_views": 3024,
-          "new_views": 0,
+          "total_views": 3025,
+          "new_views": 1,
           "posts": 105,
           "subscribers": 18
         }
@@ -738,7 +738,7 @@
         {
           "id": "166",
           "date": "2026-10-27",
-          "views": 2,
+          "views": 3,
           "text": "Сколько часов и денег у вас забирает рутина?    ⚡   Вот бесплатный калькулятор автоматизации : без регистрации и почты, ",
           "url": "https://t.me/noroutine2026/166"
         }
@@ -779,7 +779,7 @@
         {
           "date": "2026-10-27",
           "total_views": 282,
-          "new_views": 1,
+          "new_views": 0,
           "posts": 27,
           "subscribers": 7
         }

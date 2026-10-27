@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-27T11:48:48+00:00",
+  "updated_at": "2026-10-27T17:42:52+00:00",
   "channels": {
     "telegram": {
       "subscribers": 18,
@@ -36,7 +36,7 @@
         {
           "date": "2026-10-27",
           "total_views": 3024,
-          "new_views": 16,
+          "new_views": 0,
           "posts": 105,
           "subscribers": 18
         }
@@ -746,7 +746,7 @@
     },
     "max": {
       "subscribers": 7,
-      "total_views": 281,
+      "total_views": 282,
       "daily": [
         {
           "date": "2026-10-23",
@@ -778,8 +778,8 @@
         },
         {
           "date": "2026-10-27",
-          "total_views": 281,
-          "new_views": 3,
+          "total_views": 282,
+          "new_views": 1,
           "posts": 27,
           "subscribers": 7
         }
@@ -977,7 +977,7 @@
         {
           "id": "mid.ffffbf5e8117157d01a17c2d11f34267",
           "date": "2026-10-27",
-          "views": 2,
+          "views": 3,
           "text": "Сколько часов и денег у вас забирает рутина?\n\n⚡Вот бесплатный калькулятор автоматизации: без регистрации и почты, всё сч",
           "url": "https://max.ru/channel_noroutine/AaF8LRHzQmc"
         }

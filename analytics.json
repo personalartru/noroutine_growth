@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-27T21:57:19+00:00",
+  "updated_at": "2026-10-28T04:44:18+00:00",
   "channels": {
     "telegram": {
       "subscribers": 18,
@@ -38,6 +38,13 @@
           "total_views": 3025,
           "new_views": 1,
           "posts": 105,
+          "subscribers": 18
+        },
+        {
+          "date": "2026-10-28",
+          "total_views": 3025,
+          "new_views": 0,
+          "posts": 106,
           "subscribers": 18
         }
       ],
@@ -745,8 +752,8 @@
       ]
     },
     "max": {
-      "subscribers": 7,
-      "total_views": 282,
+      "subscribers": 8,
+      "total_views": 288,
       "daily": [
         {
           "date": "2026-10-23",
@@ -782,6 +789,13 @@
           "new_views": 0,
           "posts": 27,
           "subscribers": 7
+        },
+        {
+          "date": "2026-10-28",
+          "total_views": 288,
+          "new_views": 6,
+          "posts": 28,
+          "subscribers": 8
         }
       ],
       "posts": [
@@ -942,42 +956,42 @@
         {
           "id": "mid.ffffbf5e8117157d01a163ab01931306",
           "date": "2026-10-22",
-          "views": 7,
+          "views": 8,
           "text": "🚀 Как измерить эффективность автоматизации\n\nПроблема: Сколько времени уходит на рутинные задачи, а в итоге мы всё равно ",
           "url": "https://max.ru/channel_noroutine/AaFjqwGTEwY"
         },
         {
           "id": "mid.ffffbf5e8117157d01a168bd61941fea",
           "date": "2026-10-23",
-          "views": 4,
+          "views": 5,
           "text": "🚀 Как Алиса AI делает HR-работу проще\n\nПроблема: Рутинные задачи в HR отнимают кучу времени — анализ резюме, скрининг ка",
           "url": "https://max.ru/channel_noroutine/AaFovWGUH-o"
         },
         {
           "id": "mid.ffffbf5e8117157d01a16773668672bc",
           "date": "2026-10-23",
-          "views": 5,
+          "views": 6,
           "text": "Канал принимает донаты\n\nНажмите на кнопку, чтобы отправить донат и помочь каналу",
           "url": "https://max.ru/channel_noroutine/AaFnc2aGcrw"
         },
         {
           "id": "mid.ffffbf5e8117157d01a16dc355f7234e",
           "date": "2026-10-24",
-          "views": 4,
+          "views": 5,
           "text": "🚀 Управление нагрузкой команды в Яндекс Трекере\n\nПроблема: Из-за неэффективного управления задачами команда часто перегр",
           "url": "https://max.ru/channel_noroutine/AaFtw1X3I04"
         },
         {
           "id": "mid.ffffbf5e8117157d01a17881af7d7591",
           "date": "2026-10-26",
-          "views": 4,
+          "views": 5,
           "text": "📊 Как Алиса AI помогает в работе с таблицами\n\nВсё ещё тратите часы на составление отчетов и анализ данных? Это невыносим",
           "url": "https://max.ru/channel_noroutine/AaF4ga99dZE"
         },
         {
           "id": "mid.ffffbf5e8117157d01a17c2d11f34267",
           "date": "2026-10-27",
-          "views": 3,
+          "views": 4,
           "text": "Сколько часов и денег у вас забирает рутина?\n\n⚡Вот бесплатный калькулятор автоматизации: без регистрации и почты, всё сч",
           "url": "https://max.ru/channel_noroutine/AaF8LRHzQmc"
         }

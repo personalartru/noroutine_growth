@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-28T04:44:18+00:00",
+  "updated_at": "2026-10-28T12:22:47+00:00",
   "channels": {
     "telegram": {
       "subscribers": 18,
@@ -753,7 +753,7 @@
     },
     "max": {
       "subscribers": 8,
-      "total_views": 288,
+      "total_views": 290,
       "daily": [
         {
           "date": "2026-10-23",
@@ -792,8 +792,8 @@
         },
         {
           "date": "2026-10-28",
-          "total_views": 288,
-          "new_views": 6,
+          "total_views": 290,
+          "new_views": 2,
           "posts": 28,
           "subscribers": 8
         }
@@ -837,7 +837,7 @@
         {
           "id": "mid.ffffbf5e8117157d019e6e7c384269cc",
           "date": "2026-05-28",
-          "views": 19,
+          "views": 20,
           "text": "Яндекс Трекер: автоматизация и интеграции. Быстрый старт | Часть 1 https://rutube.ru/video/b57b0c7f1c39bc5a3b1ae1416209c",
           "url": "https://max.ru/channel_noroutine/AZ5ufDhCacw"
         },
@@ -984,7 +984,7 @@
         {
           "id": "mid.ffffbf5e8117157d01a17881af7d7591",
           "date": "2026-10-26",
-          "views": 5,
+          "views": 6,
           "text": "📊 Как Алиса AI помогает в работе с таблицами\n\nВсё ещё тратите часы на составление отчетов и анализ данных? Это невыносим",
           "url": "https://max.ru/channel_noroutine/AaF4ga99dZE"
         },

@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-10-29T12:32:18+00:00",
+  "updated_at": "2026-10-29T22:34:23+00:00",
   "channels": {
     "telegram": {
       "subscribers": 18,
-      "total_views": 3031,
+      "total_views": 3032,
       "daily": [
         {
           "date": "2026-10-23",
@@ -49,8 +49,8 @@
         },
         {
           "date": "2026-10-29",
-          "total_views": 3031,
-          "new_views": 0,
+          "total_views": 3032,
+          "new_views": 1,
           "posts": 108,
           "subscribers": 18
         }
@@ -731,7 +731,7 @@
         {
           "id": "165",
           "date": "2026-10-26",
-          "views": 4,
+          "views": 5,
           "text": "📊   Как Алиса AI помогает в работе с таблицами   Всё ещё тратите часы на составление отчетов и анализ данных? Это невыно",
           "url": "https://t.me/noroutine2026/165"
         },

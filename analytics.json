@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-10-28T22:21:19+00:00",
+  "updated_at": "2026-10-29T04:56:14+00:00",
   "channels": {
     "telegram": {
       "subscribers": 18,
-      "total_views": 3030,
+      "total_views": 3031,
       "daily": [
         {
           "date": "2026-10-23",
@@ -46,16 +46,16 @@
           "new_views": 5,
           "posts": 106,
           "subscribers": 18
+        },
+        {
+          "date": "2026-10-29",
+          "total_views": 3031,
+          "new_views": 1,
+          "posts": 108,
+          "subscribers": 18
         }
       ],
       "posts": [
-        {
-          "id": "16",
-          "date": "2022-09-20",
-          "views": 31,
-          "text": "https://telegra.ph/Ocheredi-v-YAndeksTrekere-09-20    #менеджмент   #управлениепроектами   #projectmanager   #управление",
-          "url": "https://t.me/noroutine2026/16"
-        },
         {
           "id": "17",
           "date": "2022-09-21",
@@ -748,6 +748,13 @@
           "views": 3,
           "text": "🛠️   Доски задач в Яндекс Трекере: ваш новый помощник   Доски задач в Яндекс Трекере — это отличный способ организовать ",
           "url": "https://t.me/noroutine2026/168"
+        },
+        {
+          "id": "169",
+          "date": "2026-10-29",
+          "views": 1,
+          "text": "Не каждый бизнес-процесс нужно отдавать нейросети   Иногда хватит формулы в таблице, иногда нужен человек. А иногда ИИ с",
+          "url": "https://t.me/noroutine2026/169"
         }
       ]
     },
@@ -795,6 +802,13 @@
           "total_views": 294,
           "new_views": 4,
           "posts": 28,
+          "subscribers": 8
+        },
+        {
+          "date": "2026-10-29",
+          "total_views": 294,
+          "new_views": 0,
+          "posts": 29,
           "subscribers": 8
         }
       ],

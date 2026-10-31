@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-30T22:02:48+00:00",
+  "updated_at": "2026-10-31T04:43:07+00:00",
   "channels": {
     "telegram": {
       "subscribers": 18,
@@ -59,6 +59,13 @@
           "total_views": 3038,
           "new_views": 6,
           "posts": 108,
+          "subscribers": 18
+        },
+        {
+          "date": "2026-10-31",
+          "total_views": 3038,
+          "new_views": 0,
+          "posts": 109,
           "subscribers": 18
         }
       ],
@@ -767,7 +774,7 @@
     },
     "max": {
       "subscribers": 8,
-      "total_views": 301,
+      "total_views": 302,
       "daily": [
         {
           "date": "2026-10-23",
@@ -823,6 +830,13 @@
           "total_views": 301,
           "new_views": 2,
           "posts": 29,
+          "subscribers": 8
+        },
+        {
+          "date": "2026-10-31",
+          "total_views": 302,
+          "new_views": 1,
+          "posts": 30,
           "subscribers": 8
         }
       ],
@@ -1033,7 +1047,7 @@
         {
           "id": "mid.ffffbf5e8117157d01a18d17f8435ce7",
           "date": "2026-10-30",
-          "views": 2,
+          "views": 3,
           "text": "📬 Яндекс Трекер: автоматизируем задачи с помощью почты\n\nРутина отнимает время, а задачи сыплются, как из рога изобилия. ",
           "url": "https://max.ru/channel_noroutine/AaGNF_hDXOc"
         }

@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-31T11:53:36+00:00",
+  "updated_at": "2026-10-31T17:00:13+00:00",
   "channels": {
     "telegram": {
       "subscribers": 18,
@@ -64,7 +64,7 @@
         {
           "date": "2026-10-31",
           "total_views": 3045,
-          "new_views": 7,
+          "new_views": 0,
           "posts": 109,
           "subscribers": 18
         }
@@ -774,7 +774,7 @@
     },
     "max": {
       "subscribers": 8,
-      "total_views": 302,
+      "total_views": 303,
       "daily": [
         {
           "date": "2026-10-23",
@@ -834,8 +834,8 @@
         },
         {
           "date": "2026-10-31",
-          "total_views": 302,
-          "new_views": 0,
+          "total_views": 303,
+          "new_views": 1,
           "posts": 30,
           "subscribers": 8
         }
@@ -851,7 +851,7 @@
         {
           "id": "mid.ffffbf5e8117157d019d3ab64060227d",
           "date": "2026-03-29",
-          "views": 24,
+          "views": 25,
           "text": "Привет! Как дела?",
           "url": "https://max.ru/channel_noroutine/AZ06tkBgIn0"
         },

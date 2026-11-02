@@ -39,14 +39,22 @@ jobs:
       - name: Собрать лид-магнит
         run: python build_materials.py
       - name: Сертификаты Минцифры (нужны для API MAX)
+        # gu-st.ru периодически обрывает соединение (curl 56). Раньше одна такая
+        # осечка роняла цикл ещё до шага опроса: свежий код не доходил до прода
+        # до следующего круга. Ретраи + неловящий шаг, чтобы цепочка не вставала.
+        continue-on-error: true
         env:
           REQUESTS_CA_BUNDLE: /etc/ssl/certs/ca-certificates.crt
         run: |
-          curl -fsSL https://gu-st.ru/content/lending/russian_trusted_root_ca_pem.crt -o /tmp/root.crt
-          curl -fsSL https://gu-st.ru/content/lending/russian_trusted_sub_ca_pem.crt -o /tmp/sub.crt
-          sudo cp /tmp/root.crt /usr/local/share/ca-certificates/russian_trusted_root_ca.crt
-          sudo cp /tmp/sub.crt /usr/local/share/ca-certificates/russian_trusted_sub_ca.crt
-          sudo update-ca-certificates
+          fetch() { curl --fail --silent --show-error --location \
+                      --retry 4 --retry-delay 3 --retry-all-errors --max-time 25 \
+                      "$1" -o "$2"; }
+          { fetch https://gu-st.ru/content/lending/russian_trusted_root_ca_pem.crt /tmp/root.crt &&
+            fetch https://gu-st.ru/content/lending/russian_trusted_sub_ca_pem.crt /tmp/sub.crt &&
+            sudo cp /tmp/root.crt /usr/local/share/ca-certificates/russian_trusted_root_ca.crt &&
+            sudo cp /tmp/sub.crt /usr/local/share/ca-certificates/russian_trusted_sub_ca.crt &&
+            sudo update-ca-certificates; } ||
+            echo "::warning::Сертификаты Минцифры не забрал — цикл идёт на системном бандле"
       - name: Восстановить offset
         uses: actions/cache/restore@v4
         with:

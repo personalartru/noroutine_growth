@@ -28,6 +28,11 @@ jobs:
     concurrency:
       # Имя группы меняем при смене схемы очереди: отменённый прогон в очереди
       # иногда оставляет группу зависшей, и новые прогоны не стартуют.
+      # cancel-in-progress: false — идущий цикл никогда не прерывается, но
+      # группа хранит ровно одного стоящего в очереди: новый прогон вытесняет
+      # предыдущего queued. Поэтому шаг «Поставить в очередь следующий цикл»
+      # не добавляет свой прогон, когда очередь уже занята — иначе он отменял
+      # queued-прогон push, и свежий код уезжал в прод на круг позже.
       group: lead-bot-v2
       cancel-in-progress: false
     steps:
@@ -102,6 +107,7 @@ jobs:
         if: always()
         env:
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
+          WF: "Run lead bot (GitHub Actions)"
         run: |
           if [ -z "$GH_TOKEN" ]; then
             echo "DISPATCH_TOKEN не задан — следующий цикл не запущен"
@@ -109,5 +115,18 @@ jobs:
           fi
           # minutes не передаём: новый прогон берёт дефолт из workflow,
           # иначе старое значение тащится по всей цепочке.
-          gh workflow run "Run lead bot (GitHub Actions)" \
-            --ref "${{ github.ref_name }}" || echo "не удалось поставить в очередь"
+          #
+          # Очередь группы lead-bot-v2 держит одного стоящего: если поставить
+          # свой прогон поверх queued-прогона push, GitHub отменит того, а его
+          # прогон и так опросил бы свежий main. Поэтому сначала смотрим,
+          # не занят ли слот (свой in_progress-прогон в этот фильтр не попадает).
+          queued=$(gh run list --workflow "$WF" --limit 10 \
+                     --json databaseId,status \
+                     --jq '[.[] | select(.status == "queued" or .status == "pending"
+                                        or .status == "waiting" or .status == "requested")]
+                           | length' 2>/dev/null || echo 0)
+          if [ "${queued:-0}" -gt 0 ]; then
+            echo "В очереди уже стоит прогонов: $queued — свой не ставим, чтобы их не отменили"
+            exit 0
+          fi
+          gh workflow run "$WF" --ref "${{ github.ref_name }}" || echo "не удалось поставить в очередь"

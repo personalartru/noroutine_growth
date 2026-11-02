@@ -209,7 +209,7 @@ TOOLS = [
      "what": "связки между системами: заявка → задача → уведомление → отчёт, "
              "без копирования поля из окна в окно",
      "pilot": "сквозная связка «источник → система → уведомление»"},
-    {"id": "tracker", "label": "Интеграция с Яндекс Трекером", "factor": 0.5,
+    {"id": "tracker", "label": "Интеграция Яндекс Трекер", "factor": 0.5,
      "impl": (30000, 90000), "support": (4000, 10000),
      "what": "задачи создаются сами: из форм, чатов и писем, с полями, "
              "исполнителем и автоматическими статусами",
@@ -233,15 +233,17 @@ DISCLAIMER = (
     "появляется после разбора процесса — обычно на 30-минутном созвоне."
 )
 
-COUNT_PRESETS = [
-    {"payload": "opt:c:1", "text": "1 человек"},
-    {"payload": "opt:c:2", "text": "2"},
-    {"payload": "opt:c:4", "text": "3–5"},
-    {"payload": "opt:c:8", "text": "6–10"},
-    {"payload": "opt:c:18", "text": "11–25"},
-    {"payload": "opt:c:x", "text": "Своё число"},
+# Кнопки количества: 1–5 отдельными кнопками, дальше диапазоны-оценки.
+# Подписи и payload'ы, клавиатуру собирает keyboard_count() через btn() —
+# без поля "type" MAX молча выбрасывает клавиатуру целиком.
+COUNT_BUTTONS = [
+    [("1", "opt:c:1"), ("2", "opt:c:2"), ("3", "opt:c:3"),
+     ("4", "opt:c:4"), ("5", "opt:c:5")],
+    [("6–10", "opt:c:8"), ("11–25", "opt:c:18")],
+    [("Своё число", "opt:c:x")],
 ]
-COUNT_RANGE = {"opt:c:4": 4, "opt:c:8": 8, "opt:c:18": 18}
+# диапазоны считаем по середине оценки
+COUNT_RANGE = {"opt:c:8": 8, "opt:c:18": 18}
 
 
 # ── Мелкие утилиты ───────────────────────────────────────────────────────────
@@ -291,6 +293,14 @@ def tool_by_id(tid):
     return next((t for t in ALL_TOOLS if t["id"] == tid), None)
 
 
+def role_at(sphere, arg):
+    """Специальность в сфере по индексу из payload'а (opt:r:0 … opt:r:3)."""
+    try:
+        return sphere["roles"][int(arg)]
+    except (TypeError, ValueError, IndexError):
+        return None
+
+
 def btn(text, payload):
     return {"type": "callback", "text": text, "payload": payload}
 
@@ -336,7 +346,10 @@ def new_session():
         "sphere_label": None,
         "mode": None,
         "roles": [],
+        "role_pick": [],         # отмеченные на шаге 2 специальности (индексы)
+        "role_queue": [],        # у кого ещё спрашиваем количество
         "pending_role": None,
+        "last_role": None,
         "ops": [],
         "tools": [],
         "calc": None,
@@ -450,20 +463,25 @@ def keyboard_mode():
 
 
 def keyboard_roles(session):
+    """Шаг 2: отмечаем несколько специалистов сразу."""
     sphere = sphere_by_id(session.get("sphere")) or SPHERES[0]
-    rows = [[btn(f"{role['label']} · {money(hour_rate(role['salary']))}/ч", f"opt:r:{i}")]
-            for i, role in enumerate(sphere["roles"])]
-    if session["roles"]:
-        rows.append([btn("Достаточно, к рутине", "opt:n:calc")])
+    rows = []
+    for i, role in enumerate(sphere["roles"]):
+        mark = "✅" if i in session.get("role_pick", []) else "▫️"
+        rate = money(hour_rate(role["salary"]))
+        rows.append([btn(f"{mark} {role['label']} · {rate}/ч", f"opt:r:{i}")])
+    rows.append([btn("Сколько их?", "opt:r:ok"), btn("Сбросить выбор", "opt:r:clear")])
     rows.append([btn("🔄 Начать заново", "opt:reset")])
     return rows
 
 
 def keyboard_count():
-    return [COUNT_PRESETS[i:i + 3] for i in range(0, len(COUNT_PRESETS), 3)]
+    """1–5 отдельными кнопками, затем диапазоны и свой вариант."""
+    return [[btn(label, payload) for label, payload in row] for row in COUNT_BUTTONS]
 
 
 def keyboard_more():
+    """Клавиатура для старых сообщений: там шаг 2 был по одной специальности."""
     return [[btn("Добавить специальность", "opt:n:more")],
             [btn("Считаем рутину", "opt:n:calc")],
             [btn("🔄 Начать заново", "opt:reset")]]
@@ -520,32 +538,43 @@ def text_mode(session):
 
 
 def text_roles(session):
-    current = ", ".join(f"{esc(r['label'])} × {r['count']}" for r in session["roles"])
+    sphere = sphere_by_id(session.get("sphere")) or SPHERES[0]
+    picked = [sphere["roles"][i]["label"] for i in sorted(session.get("role_pick") or [])
+              if i < len(sphere["roles"])]
     lines = [
         "<b>Шаг 2 из 6 · Кого оптимизируем?</b>",
         "",
-        "Выберите специальность — по ней посчитаем стоимость часа рутины.",
+        f"В сфере «{esc(sphere['label'])}» обычно рутинят эти специалисты. "
+        "Отметьте всех, кто повторяет одно и то же руками — можно несколько "
+        "галочек, потом спросим, сколько человек в каждой роли.",
+        "",
     ]
-    if current:
-        lines += ["", f"Уже в расчёте: {current}."]
+    if picked:
+        lines.append("Отмечено: " + ", ".join(esc(x) for x in picked) + ".")
+    else:
+        lines.append("Отметьте хотя бы одного — кнопка «Сколько их?» ведёт дальше.")
     return "\n".join(lines)
 
 
 def text_count(session):
     role = session["pending_role"]
+    left = len(session.get("role_queue") or [])
+    if left > 1:
+        ask = f"Следом спросим ещё про {plural(left, ('специалиста', 'специалистов', 'специалистов'))}."
+    elif left == 1:
+        ask = "Следом — последний вопрос по людям."
+    else:
+        ask = "Это последний вопрос по команде."
     return (
         f"<b>{esc(role['label'])}</b> — сколько таких человек?\n"
-        "Ставка по этой роли: " + f"{money(role['rate'])}/ч. "
-        "Можно кнопкой, можно написать число сообщением."
+        f"Ставка по этой роли: {money(role['rate'])}/ч. {ask}\n"
+        "Кнопки 1–5, диапазоны «6–10» и «11–25», либо напишите число сообщением."
     )
 
 
-def text_more(session):
-    return (
-        f"Добавил: {esc(session['last_role'])}. В расчёте "
-        f"{people_phrase(headcount(session))}.\n\n"
-        "Докидываем специальность или переходим к рутине?"
-    )
+def text_team(session):
+    roles = ", ".join(f"{esc(r['label'])} × {r['count']}" for r in session["roles"])
+    return f"Команда: {roles}. В расчёте {people_phrase(headcount(session))}."
 
 
 def text_ops(session):
@@ -787,7 +816,8 @@ def on_sphere(session, arg):
     if not sphere:
         return session, emit("Такой сферы нет в списке — выберите из кнопок.")
     session.update(sphere=sphere["id"], sphere_label=sphere["label"], mode=None,
-                   roles=[], pending_role=None, ops=[], tools=[], calc=None, sav=None,
+                   roles=[], role_pick=[], role_queue=[], pending_role=None,
+                   last_role=None, ops=[], tools=[], calc=None, sav=None,
                    step="mode")
     return session, emit(text_mode(session), keyboard_mode())
 
@@ -803,18 +833,46 @@ def on_mode(session, arg):
         return to_ops(session)
     session["mode"] = "team"
     session["step"] = "role"
+    session["role_pick"] = []
+    session["role_queue"] = []
     return session, emit(text_roles(session), keyboard_roles(session))
 
 
 def on_role(session, arg):
+    """Шаг 2: отмечаем несколько специалистов, затем спрашиваем количество по каждому."""
     sphere = sphere_by_id(session.get("sphere"))
     if not sphere:
         return start(session)
-    try:
-        role = sphere["roles"][int(arg)]
-    except (ValueError, IndexError):
+    if arg == "clear":
+        session["role_pick"] = []
+        return session, emit(text_roles(session), keyboard_roles(session))
+    if arg == "ok":
+        picks = [i for i in session.get("role_pick") or [] if i < len(sphere["roles"])]
+        if not picks:
+            return session, emit("Отметьте хотя бы одного специалиста — кнопки выше, "
+                                 "можно сразу несколько.")
+        session["role_queue"] = [{"label": sphere["roles"][i]["label"],
+                                  "rate": hour_rate(sphere["roles"][i]["salary"])}
+                                 for i in picks]
+        session["role_pick"] = []
+        return ask_count(session)
+    role = role_at(sphere, arg)
+    if not role:
         return session, emit("Специальность не распознана — выберите из списка.")
-    session["pending_role"] = {"label": role["label"], "rate": hour_rate(role["salary"])}
+    index = sphere["roles"].index(role)
+    pick = list(session.get("role_pick") or [])
+    pick.remove(index) if index in pick else pick.append(index)
+    session["role_pick"] = pick
+    return session, emit(text_roles(session), keyboard_roles(session))
+
+
+def ask_count(session):
+    """Спрашиваем количество по следующей роли из очереди; очередь пуста — в рутину."""
+    queue = session.get("role_queue") or []
+    if not queue:
+        return counts_done(session)
+    session["pending_role"] = queue[0]
+    session["role_queue"] = queue[1:]
     session["step"] = "count"
     return session, emit(text_count(session), keyboard_count())
 
@@ -822,7 +880,7 @@ def on_role(session, arg):
 def on_count(session, arg):
     role = session.get("pending_role")
     if not role:
-        return on_role(session, "0") if session.get("sphere") else start(session)
+        return on_role(session, "ok") if session.get("role_pick") else start(session)
     if arg == "x":
         session["step"] = "count_text"
         return session, emit(f"Сколько человек в роли «{esc(role['label'])}»? "
@@ -832,28 +890,35 @@ def on_count(session, arg):
         try:
             count = int(arg)
         except ValueError:
-            return session, emit("Не понял количество — выберите кнопкой или "
-                                 "напишите число.")
-    return add_role(session, role["label"], count, role["rate"])
+            return session, emit("Не понял количество — выберите кнопку 1–5 "
+                                 "или напишите число сообщением.")
+    record_role(session, role["label"], count, role["rate"])
+    session["pending_role"] = None
+    return ask_count(session)
 
 
-def add_role(session, label, count, rate):
+def record_role(session, label, count, rate):
+    """Плюсуем роль в команду: повторный выбор той же роли складывается."""
     count = max(1, min(int(count), MAX_HEADCOUNT))
     roles = list(session["roles"])
-    for role in roles:
-        if role["label"] == label:
-            role["count"] += count
+    for existing in roles:
+        if existing["label"] == label:
+            existing["count"] += count
             break
     else:
         roles.append({"label": label, "count": count, "rate": rate})
     session["roles"] = roles
     session["last_role"] = f"{label} × {count}"
-    session["pending_role"] = None
-    session["step"] = "more_roles"
-    return session, emit(text_more(session), keyboard_more())
+
+
+def counts_done(session):
+    """Про всех отмеченных спросили количество — показываем команду и шаг рутины."""
+    session, ops_messages = to_ops(session)
+    return session, emit(text_team(session)) + ops_messages
 
 
 def on_more(session, arg):
+    """Совместимость с клавиатурой прошлой версии шага 2 (одна специальность за раз)."""
     if arg == "more":
         session["step"] = "role"
         return session, emit(text_roles(session), keyboard_roles(session))
@@ -968,7 +1033,9 @@ def dispatch_text(text, session):
         match = re.search(r"\d+", text or "")
         if not match:
             return session, emit("Нужно число — например «7» или «примерно 12».")
-        return add_role(session, role["label"], int(match.group()), role["rate"])
+        record_role(session, role["label"], int(match.group()), role["rate"])
+        session["pending_role"] = None
+        return ask_count(session)
 
     if step == "feedback":
         calc = session.get("calc") or {}

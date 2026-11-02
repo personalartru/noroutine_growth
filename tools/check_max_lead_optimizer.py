@@ -48,15 +48,21 @@ max_lead.is_subscribed = lambda user_id: True
 
 USER = 123456
 DIALOG = "dialog-123456"
+USER2 = 654321              # второй пользователь: проверки, которые портят сессию
+DIALOG2 = "dialog-654321"
 
 
 def reset():
     SENT.clear()
 
 
-def messages_to_user():
+def messages_to(chat=DIALOG):
     return [s for s in SENT if s["path"] == "messages"
-            and s["query"].get("chat_id") == DIALOG]
+            and s["query"].get("chat_id") == chat]
+
+
+def messages_to_user():
+    return messages_to(DIALOG)
 
 
 def buttons_of(message):
@@ -66,8 +72,12 @@ def buttons_of(message):
     return []
 
 
+def texts_to(chat=DIALOG):
+    return [m["body"]["text"] for m in messages_to(chat)]
+
+
 def texts_to_user():
-    return [m["body"]["text"] for m in messages_to_user()]
+    return texts_to(DIALOG)
 
 
 def check(label, condition, detail=""):
@@ -104,7 +114,8 @@ results.append(check("шаг сохранён в файл состояния", s
                      session["step"]))
 
 # 3. Полный путь по кнопкам до финала
-flow = ["opt:s:support", "opt:m:team", "opt:r:0", "opt:c:8", "opt:n:calc",
+flow = ["opt:s:support", "opt:m:team", "opt:r:0", "opt:r:1", "opt:r:ok",
+        "opt:c:8", "opt:c:4",
         "opt:o:tickets", "opt:o:status", "opt:o:ok", "opt:t:chat", "opt:t:n8n",
         "opt:t:ok", "opt:t:plan"]
 reset()
@@ -124,6 +135,24 @@ final = next((m for m in messages_to_user()
               if any(b.get("payload") == "opt:fb" for row in buttons_of(m)
                      for b in row)), None)
 results.append(check("в финале кнопка обратной связи", final is not None))
+
+# 3b. Регресс на прод-сбой: на шаге «сколько таких человек» кнопки обязаны быть
+#     полноценными (type=callback) — без type MAX клавиатуру не показывает.
+reset()
+max_lead.remember_dialog(USER2, DIALOG2)
+for payload in ("opt:start", "opt:s:hr", "opt:m:team", "opt:r:2", "opt:r:ok"):
+    max_lead.handle_callback({"payload": payload, "callback_id": "cb",
+                              "user": {"user_id": USER2}})
+count_kb = [row for m in messages_to(DIALOG2) for row in buttons_of(m)
+            if any(b.get("payload") == "opt:c:1" for b in row)]
+labels = [b["text"] for row in count_kb for b in row]
+results.append(check("есть кнопки 1–5 на вопросе о количестве",
+                     all(str(i) in labels for i in range(1, 6)), str(labels)))
+results.append(check("у всех кнопок клавиатуры есть type",
+                     all(b.get("type") == "callback" for row in count_kb for b in row),
+                     str(count_kb[:1])))
+results.append(check("роль в опросе — отмеченная",
+                     any("Онбординг-менеджер" in t for t in texts_to(DIALOG2))))
 
 # 4. Обратная связь: текст уходит владельцу, сессия закрывается
 reset()
@@ -150,17 +179,21 @@ max_lead.handle_callback({"payload": "opt:s:hr", "callback_id": "cb",
                           "user": {"user_id": USER}})
 max_lead.handle_callback({"payload": "opt:m:team", "callback_id": "cb",
                           "user": {"user_id": USER}})
-max_lead.handle_callback({"payload": "opt:r:0", "callback_id": "cb",
-                          "user": {"user_id": USER}})
-max_lead.handle_callback({"payload": "opt:c:x", "callback_id": "cb",
-                          "user": {"user_id": USER}})
+for payload in ("opt:r:0", "opt:r:1", "opt:r:ok", "opt:c:3", "opt:c:x"):
+    max_lead.handle_callback({"payload": payload, "callback_id": "cb",
+                              "user": {"user_id": USER}})
 reset()
 max_lead.handle_text(USER, DIALOG, None, "dialog", "Павел", "personartru", "42")
 results.append(check("число попало в расчёт, а не в заявку",
                      not any(s["query"].get("chat_id") == "999" for s in SENT)))
 session = json.load(open(os.environ["MAX_OPTIMIZER_FILE"]))[str(USER)]
-results.append(check("количество принялось", session["last_role"].endswith("× 42"),
+results.append(check("количество по второй роли принялось",
+                     session["last_role"].endswith("× 42"),
                      session.get("last_role", "")))
+results.append(check("первая роль осталась в команде",
+                     any(r["label"].startswith("Рекрутер") and r["count"] == 3
+                         for r in session["roles"]),
+                     str(session["roles"])))
 
 # 6. «отмена» закрывает сессию
 reset()

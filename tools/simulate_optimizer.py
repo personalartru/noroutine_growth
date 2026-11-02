@@ -38,8 +38,8 @@ SCENARIOS = {
     "team": {
         "title": "Команда поддержки: 8 первой линии + 4 второй",
         "clicks": ["opt:s:support", "opt:m:team",
-                   "opt:r:0", "opt:c:8", "opt:n:more", "opt:r:1", "opt:c:4",
-                   "opt:n:calc",
+                   "opt:r:0", "opt:r:1", "opt:r:2", "opt:r:ok",
+                   "opt:c:8", "opt:c:4", "opt:c:2",
                    "opt:o:tickets", "opt:o:route", "opt:o:status", "opt:o:sla",
                    "opt:o:report", "opt:o:ok",
                    "opt:t:chat", "opt:t:agent", "opt:t:n8n", "opt:t:ok",
@@ -49,7 +49,7 @@ SCENARIOS = {
     },
     "fire": {
         "title": "Бухгалтерия 9 человек и шутка про «Уволить всех»",
-        "clicks": ["opt:s:finance", "opt:m:team", "opt:r:0", "opt:c:x", "opt:n:calc",
+        "clicks": ["opt:s:finance", "opt:m:team", "opt:r:0", "opt:r:ok", "opt:c:x",
                    "opt:o:primary", "opt:o:bank", "opt:o:close", "opt:o:ok",
                    "opt:t:fire", "opt:t:full", "opt:t:ok", "opt:t:plan", "opt:fb"],
         "text": ["9", "Соберите, пожалуйста, сверку выписок и разнос платежей."],
@@ -57,6 +57,7 @@ SCENARIOS = {
     "mistakes": {
         "title": "Пользователь жмёт не туда и пишет не то",
         "clicks": ["opt:t:chat", "opt:o:ok", "opt:n:calc", "opt:c:x", "opt:m:self",
+                   "opt:r:1", "opt:r:1", "opt:r:ok", "opt:n:more",
                    "opt:s:support", "opt:o:zz", "opt:t:qq", "opt:o:tickets",
                    "opt:o:ok", "opt:t:ok", "opt:t:back", "opt:reset"],
         "text": ["не число", "сорок два", "отмена"],
@@ -80,13 +81,14 @@ def play(name, script, verbose=True):
                 if button.get("payload"):
                     labels[button["payload"]] = button["text"]
 
-    def push(role, text, buttons="", payload=None):
+    def push(role, text, buttons="", payload=None, raw=None):
         transcript.append({"role": role, "text": text, "buttons": buttons,
-                           "payload": payload})
+                           "payload": payload, "raw": raw})
 
     for message in messages:
         remember(message.get("buttons"))
-        push("bot", message["text"], render_buttons(message.get("buttons")))
+        push("bot", message["text"], render_buttons(message.get("buttons")),
+             raw=message.get("buttons"))
 
     clicks, texts = list(script["clicks"]), list(script["text"])
     for _ in range(200):
@@ -102,7 +104,8 @@ def play(name, script, verbose=True):
             break
         for message in messages:
             remember(message.get("buttons"))
-            push("bot", message["text"], render_buttons(message.get("buttons")))
+            push("bot", message["text"], render_buttons(message.get("buttons")),
+                 raw=message.get("buttons"))
         if not opt.expects_text(session) and not clicks and not texts:
             break
 
@@ -145,6 +148,19 @@ def validate(transcripts):
                     if phrase in item["text"]:
                         problems.append(f"{name}: в удачном сценарии реплика "
                                         f"«{phrase[:20]}» — значит, кнопка не распознана")
+            for row in item.get("raw") or []:
+                if len(row) > 7:
+                    problems.append(f"{name}: в ряду {len(row)} кнопок — MAX "
+                                    "допускает 7")
+                for button in row:
+                    if button.get("type") not in ("callback", "link"):
+                        problems.append(f"{name}: у кнопки «{button.get('text')}» "
+                                        "нет type — MAX не покажет клавиатуру")
+                    if button.get("type") == "callback" and not button.get("payload"):
+                        problems.append(f"{name}: callback без payload — "
+                                        f"«{button.get('text')}»")
+                    if button.get("type") == "link" and not button.get("url"):
+                        problems.append(f"{name}: link без url — «{button.get('text')}»")
             for key in item["buttons"].split(" | "):
                 if key and len(key) > 64:
                     problems.append(f"{name}: подпись кнопки {len(key)} символов — "

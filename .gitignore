@@ -4,3 +4,13 @@ events.jsonl
 __pycache__/
 .env.k8s
 deploy/k8s/sa-kubeconfig.yaml
+
+# Локальное состояние бота: чужие тексты заявок и шаги диалогов не коммитим
+.max_offset
+.offset
+.max_pending.json
+.max_dialogs.json
+.max_comment_chat
+.max_optimizer.json
+optimizer-preview.html
+__pycache__/

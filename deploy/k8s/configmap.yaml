@@ -12,6 +12,9 @@ data:
   OFFSET_FILE: "/state/.offset"
   MAX_OFFSET_FILE: "/state/.max_offset"
   MAX_PENDING_FILE: "/state/.max_pending.json"
+  MAX_DIALOGS_FILE: "/state/.max_dialogs.json"
+  # Шаги диалога «Оптимизатора»: на каком вопросе кто стоит
+  MAX_OPTIMIZER_FILE: "/state/.max_optimizer.json"
   # requests использует системный bundle с сертификатами Минцифры
   REQUESTS_CA_BUNDLE: "/app/ca-bundle.pem"
   # Материалы лежат в /app (том же volume, что и код)

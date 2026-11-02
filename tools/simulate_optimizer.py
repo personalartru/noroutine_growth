@@ -28,7 +28,7 @@ import optimizer as opt  # noqa: E402
 SCENARIOS = {
     "solo": {
         "title": "Сам на всё в небольшом интернет-магазине",
-        "clicks": ["opt:s:ecommerce", "opt:m:self",
+        "clicks": ["opt:s:ecom", "opt:m:self",
                    "opt:o:cards", "opt:o:reviews", "opt:o:stock", "opt:o:report",
                    "opt:o:ok",
                    "opt:t:n8n", "opt:t:ok", "opt:t:plan", "opt:fb"],
@@ -36,16 +36,16 @@ SCENARIOS = {
                  "Контакт: @ivan"],
     },
     "team": {
-        "title": "Команда поддержки: 8 первой линии + 4 второй",
-        "clicks": ["opt:s:support", "opt:m:team",
+        "title": "Поддержка IT-продукта: 8 первой линии + 4 аналитика + 2 тестера",
+        "clicks": ["opt:s:it", "opt:m:team",
                    "opt:r:0", "opt:r:1", "opt:r:2", "opt:r:ok",
                    "opt:c:8", "opt:c:4", "opt:c:2",
-                   "opt:o:tickets", "opt:o:route", "opt:o:status", "opt:o:sla",
-                   "opt:o:report", "opt:o:ok",
+                   "opt:o:ticket", "opt:o:feedback", "opt:o:metrics", "opt:o:release",
+                   "opt:o:ok",
                    "opt:t:chat", "opt:t:agent", "opt:t:n8n", "opt:t:ok",
                    "opt:t:plan", "opt:fb"],
-        "text": ["Одни и те же вопросы про статус и оплату, 12 человек на линии. "
-                 "Павел, support@company.ru"],
+        "text": ["Одни и те же вопросы про статус и оплату, 14 человек в контуре. "
+                 "support@company.ru"],
     },
     "fire": {
         "title": "Бухгалтерия 9 человек и шутка про «Уволить всех»",
@@ -54,11 +54,22 @@ SCENARIOS = {
                    "opt:t:fire", "opt:t:full", "opt:t:ok", "opt:t:plan", "opt:fb"],
         "text": ["9", "Соберите, пожалуйста, сверку выписок и разнос платежей."],
     },
+    "again": {
+        "title": "Второй проход: финал → «Пройти заново» → снова шаг 1",
+        "clicks": ["opt:s:marketing", "opt:m:self",
+                   "opt:o:leads", "opt:o:crm", "opt:o:ok",
+                   "opt:t:chat", "opt:t:ok", "opt:t:plan", "opt:fb",
+                   "opt:again", "opt:s:services", "opt:m:self",
+                   "opt:o:record", "opt:o:chat", "opt:o:ok",
+                   "opt:t:agent", "opt:t:ok", "opt:t:plan", "opt:fb"],
+        "text": ["Реклама и отчёты по лидам, одна. marketing@shop.ru",
+                 "Запись клиентов и ответы в чатах, администратор одна."],
+    },
     "mistakes": {
         "title": "Пользователь жмёт не туда и пишет не то",
         "clicks": ["opt:t:chat", "opt:o:ok", "opt:n:calc", "opt:c:x", "opt:m:self",
                    "opt:r:1", "opt:r:1", "opt:r:ok", "opt:n:more",
-                   "opt:s:support", "opt:o:zz", "opt:t:qq", "opt:o:tickets",
+                   "opt:s:it", "opt:o:zz", "opt:t:qq", "opt:o:ticket",
                    "opt:o:ok", "opt:t:ok", "opt:t:back", "opt:reset"],
         "text": ["не число", "сорок два", "отмена"],
     },
@@ -120,9 +131,10 @@ def play(name, script, verbose=True):
     return transcript, session
 
 
-HAPPY = ("solo", "team", "fire")
+HAPPY = ("solo", "team", "fire", "again")
 FAILURE_PHRASES = ("не распознана", "нет в списке", "не понял", "Не понял",
                    "нужно число", "Нужно число", "Traceback")
+INTRO = opt.text_intro().splitlines()[0][:24]
 
 
 def validate(transcripts):
@@ -130,6 +142,12 @@ def validate(transcripts):
     for name, transcript, session in transcripts:
         if name in HAPPY and session["step"] != "done":
             problems.append(f"{name}: не дошёл до финала (шаг {session['step']})")
+        if name == "again":
+            restarts = sum(1 for item in transcript
+                           if item["role"] == "bot" and item["text"].startswith(INTRO))
+            if restarts < 2:
+                problems.append(f"again: «Пройти заново» не вернул к шагу 1 "
+                                f"(приветствий: {restarts})")
         for item in transcript:
             if item["role"] == "user":
                 if item["payload"]:

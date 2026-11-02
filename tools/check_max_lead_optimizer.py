@@ -102,21 +102,28 @@ if archive:
     results.append(check("«Оптимизатор» идёт сразу под кнопкой заявки",
                          order == ["want_task", "opt:start"], str(order)))
 
-# 2. Кнопка «Оптимизатор» → шаг 1 с шестью сферами
+# 2. Кнопка «Оптимизатор» → шаг 1 с семью сферами
 reset()
 max_lead.handle_callback({"payload": "opt:start", "callback_id": "cb1",
                           "user": {"user_id": USER, "name": "Павел"}})
 texts = texts_to_user()
 results.append(check("открыт шаг «сфера»", any("Шаг 1 из 6" in t for t in texts),
                      f"{len(texts)} сообщ."))
+results.append(check("в приветствии нет обещания «как в калькуляторе сайта»",
+                     not any("калькулятор" in t.lower() for t in texts)))
+sphere_kb = [row for m in messages_to_user() for row in buttons_of(m)
+             if any((b.get("payload") or "").startswith("opt:s:") for b in row)]
+results.append(check("семь сфер на кнопках",
+                     len({b.get("payload") for row in sphere_kb for b in row}) == 7,
+                     str(sorted({b.get("payload") for row in sphere_kb for b in row}))))
 session = json.load(open(os.environ["MAX_OPTIMIZER_FILE"]))[str(USER)]
 results.append(check("шаг сохранён в файл состояния", session["step"] == "sphere",
                      session["step"]))
 
 # 3. Полный путь по кнопкам до финала
-flow = ["opt:s:support", "opt:m:team", "opt:r:0", "opt:r:1", "opt:r:ok",
+flow = ["opt:s:it", "opt:m:team", "opt:r:0", "opt:r:1", "opt:r:ok",
         "opt:c:8", "opt:c:4",
-        "opt:o:tickets", "opt:o:status", "opt:o:ok", "opt:t:chat", "opt:t:n8n",
+        "opt:o:ticket", "opt:o:metrics", "opt:o:ok", "opt:t:chat", "opt:t:n8n",
         "opt:t:ok", "opt:t:plan"]
 reset()
 for payload in flow:
@@ -127,7 +134,7 @@ results.append(check("есть часы и стоимость рутины",
                      any("Часы рутины" in t for t in texts)))
 results.append(check("есть экономия", any("Экономия" in t for t in texts)))
 results.append(check("есть чек-лист внедрения",
-                     any("Пошаговый чек-лист" in t for t in texts)))
+                     any("Чек-лист внедрения" in t for t in texts)))
 results.append(check("есть бюджет и дисклеймер",
                      any("Примерный бюджет" in t for t in texts)
                      and any("Дисклеймер" in t for t in texts)))
@@ -140,7 +147,7 @@ results.append(check("в финале кнопка обратной связи",
 #     полноценными (type=callback) — без type MAX клавиатуру не показывает.
 reset()
 max_lead.remember_dialog(USER2, DIALOG2)
-for payload in ("opt:start", "opt:s:hr", "opt:m:team", "opt:r:2", "opt:r:ok"):
+for payload in ("opt:start", "opt:s:it", "opt:m:team", "opt:r:2", "opt:r:ok"):
     max_lead.handle_callback({"payload": payload, "callback_id": "cb",
                               "user": {"user_id": USER2}})
 count_kb = [row for m in messages_to(DIALOG2) for row in buttons_of(m)
@@ -152,12 +159,15 @@ results.append(check("у всех кнопок клавиатуры есть typ
                      all(b.get("type") == "callback" for row in count_kb for b in row),
                      str(count_kb[:1])))
 results.append(check("роль в опросе — отмеченная",
-                     any("Онбординг-менеджер" in t for t in texts_to(DIALOG2))))
+                     any("Тестировщик" in t for t in texts_to(DIALOG2))))
 
 # 4. Обратная связь: текст уходит владельцу, сессия закрывается
 reset()
 max_lead.handle_callback({"payload": "opt:fb", "callback_id": "cb",
                           "user": {"user_id": USER, "name": "Павел"}})
+results.append(check("просьба о заявке без имени владельца",
+                     any("Перешлю в штаб оптимизации" in t for t in texts_to_user())
+                     and not any("Павл" in t for t in texts_to_user())))
 max_lead.handle_text(USER, DIALOG, None, "dialog", "Павел", "personartru",
                      "Хочу автоматизировать тикеты, 8 человек")
 admin = [s for s in SENT if s["query"].get("chat_id") == "999"]
@@ -166,16 +176,29 @@ if admin:
     body = admin[0]["body"]["text"]
     results.append(check("в заявке есть текст и черновик расчёта",
                          "автоматизировать тикеты" in body
-                         and "[Оптимизатор]" in body and "Поддержка" in body))
+                         and "[Оптимизатор]" in body and "IT / продукт" in body))
 results.append(check("сессия очищена после заявки",
                      str(USER) not in json.load(
                          open(os.environ["MAX_OPTIMIZER_FILE"]))))
+
+# 4b. Второй проход: после закрытой сессии «Пройти заново» возвращает к шагу 1
+reset()
+max_lead.handle_callback({"payload": "opt:again", "callback_id": "cb4b",
+                          "user": {"user_id": USER}})
+again = texts_to_user()
+results.append(check("второй проход открыл шаг 1",
+                     any("Оптимизатор — бот" in t for t in again)
+                     and any("Шаг 1 из 6" in t for t in again)))
+results.append(check("после второго прохода клавиатура снова со сферами",
+                     any((b.get("payload") or "").startswith("opt:s:")
+                         for m in messages_to_user() for row in buttons_of(m)
+                         for b in row)))
 
 # 5. Свободный текст на шаге «своё число» не превращается в лид
 reset()
 max_lead.handle_callback({"payload": "opt:start", "callback_id": "cb",
                           "user": {"user_id": USER}})
-max_lead.handle_callback({"payload": "opt:s:hr", "callback_id": "cb",
+max_lead.handle_callback({"payload": "opt:s:it", "callback_id": "cb",
                           "user": {"user_id": USER}})
 max_lead.handle_callback({"payload": "opt:m:team", "callback_id": "cb",
                           "user": {"user_id": USER}})
@@ -191,7 +214,7 @@ results.append(check("количество по второй роли приня
                      session["last_role"].endswith("× 42"),
                      session.get("last_role", "")))
 results.append(check("первая роль осталась в команде",
-                     any(r["label"].startswith("Рекрутер") and r["count"] == 3
+                     any(r["label"].startswith("L1-поддержка") and r["count"] == 3
                          for r in session["roles"]),
                      str(session["roles"])))
 

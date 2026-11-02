@@ -383,7 +383,7 @@ def blended_rate(session):
 
 # ── Расчёт ───────────────────────────────────────────────────────────────────
 def compute_routine(session):
-    sphere = sphere_by_id(session["sphere"]) or SPHERES[0]
+    sphere = sphere_by_id(session.get("sphere")) or SPHERES[0]
     chosen = [op for op in sphere["ops"] if op["id"] in session["ops"]]
     per_person = min(sum(op["hours"] for op in chosen), WORK_HOURS)
     people = headcount(session) or 1
@@ -450,7 +450,7 @@ def keyboard_mode():
 
 
 def keyboard_roles(session):
-    sphere = sphere_by_id(session["sphere"])
+    sphere = sphere_by_id(session.get("sphere")) or SPHERES[0]
     rows = [[btn(f"{role['label']} · {money(hour_rate(role['salary']))}/ч", f"opt:r:{i}")]
             for i, role in enumerate(sphere["roles"])]
     if session["roles"]:
@@ -470,7 +470,7 @@ def keyboard_more():
 
 
 def keyboard_ops(session):
-    sphere = sphere_by_id(session["sphere"])
+    sphere = sphere_by_id(session.get("sphere")) or SPHERES[0]
     rows = []
     for i, op in enumerate(sphere["ops"]):
         mark = "✅" if op["id"] in session["ops"] else "▫️"
@@ -549,7 +549,7 @@ def text_more(session):
 
 
 def text_ops(session):
-    sphere = sphere_by_id(session["sphere"])
+    sphere = sphere_by_id(session.get("sphere")) or SPHERES[0]
     total = sum(op["hours"] for op in sphere["ops"] if op["id"] in session["ops"])
     lines = [
         "<b>Шаг 3 из 6 · Что чаще всего повторяете руками?</b>",
@@ -737,6 +737,17 @@ TEXT_FEEDBACK_DONE = (
 
 
 # ── Диспетчер кнопок ─────────────────────────────────────────────────────────
+TEXT_STALE = ("Похоже, это кнопка из прошлого расчёта. "
+              "Нажмите «Оптимизатор» — начнём с начала.")
+
+# шаги, которые бессмысленны без выбранной сферы (кнопки «сфера»/«режим» — нет)
+STALE_GUARDED = {"r", "c", "n", "o", "t"}
+
+# сессия без сферы — значит кнопки пришли из давно сброшенного расчёта
+def is_stale(session):
+    return sphere_by_id(session.get("sphere")) is None
+
+
 def start(session=None):
     """Точка входа по кнопке «Оптимизатор»."""
     return new_session(), emit(text_intro(), keyboard_sphere())
@@ -746,7 +757,8 @@ def dispatch(payload, session):
     """Один клик по клавиатуре → (новое состояние, список сообщений)."""
     if not payload or not payload.startswith("opt:"):
         return session, []
-    session = dict(session)
+    # добиваем недостающие поля: состояние могло прийти из более старой версии
+    session = {**new_session(), **(session or {})}
     session["updated"] = time.time()
     parts = payload.split(":")
     kind = parts[1] if len(parts) > 1 else ""
@@ -762,7 +774,11 @@ def dispatch(payload, session):
 
     handler = HANDLERS.get(kind)
     if not handler:
-        return session, []
+        return session, emit("Не распознал кнопку — нажмите «Оптимизатор», "
+                             "чтобы начать заново.")
+    if kind in STALE_GUARDED and is_stale(session):
+        # тап по клавиатуре из сброшенного/просроченного расчёта
+        return session, emit(TEXT_STALE)
     return handler(session, arg)
 
 
@@ -858,6 +874,9 @@ def to_ops(session):
 
 def on_op(session, arg):
     sphere = sphere_by_id(session.get("sphere"))
+    if not sphere:
+        # кнопка со старого сообщения: сфера уже сбросилась или её не выбирали
+        return session, emit(TEXT_STALE)
     if arg == "clear":
         session["ops"] = []
         return session, emit(text_ops(session), keyboard_ops(session))
@@ -879,6 +898,8 @@ def on_op(session, arg):
 
 
 def on_tool(session, arg):
+    if session.get("step") not in ("tools", "savings", "rollout"):
+        return session, emit(TEXT_STALE)
     calc = session.get("calc") or compute_routine(session)
     session["calc"] = calc
     if arg == "clear":
@@ -935,15 +956,18 @@ HANDLERS = {
 # ── Текстовые сообщения внутри активной сессии ───────────────────────────────
 def dispatch_text(text, session):
     """Свободный текст на шагах, где он ожидается: число и заявка."""
-    session = dict(session)
+    session = {**new_session(), **(session or {})}
     session["updated"] = time.time()
     step = session.get("step")
 
     if step == "count_text":
+        role = session.get("pending_role")
+        if not role:
+            # состояние пришло без роли — возвращаем к выбору специальности
+            return to_ops(session) if session.get("roles") else start(session)
         match = re.search(r"\d+", text or "")
         if not match:
             return session, emit("Нужно число — например «7» или «примерно 12».")
-        role = session["pending_role"]
         return add_role(session, role["label"], int(match.group()), role["rate"])
 
     if step == "feedback":

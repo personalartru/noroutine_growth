@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-11-02T15:05:37+00:00",
+  "updated_at": "2026-11-03T00:44:15+00:00",
   "channels": {
     "telegram": {
       "subscribers": 18,
-      "total_views": 3048,
+      "total_views": 3053,
       "daily": [
         {
           "date": "2026-10-23",
@@ -81,16 +81,16 @@
           "new_views": 0,
           "posts": 109,
           "subscribers": 18
+        },
+        {
+          "date": "2026-11-03",
+          "total_views": 3053,
+          "new_views": 5,
+          "posts": 110,
+          "subscribers": 18
         }
       ],
       "posts": [
-        {
-          "id": "18",
-          "date": "2022-09-21",
-          "views": 32,
-          "text": "https://telegra.ph/CHto-takoe-vorkflou-zadach-v-Trekere-09-21    #менеджмент   #управлениепроектами   #projectmanager   ",
-          "url": "https://t.me/noroutine2026/18"
-        },
         {
           "id": "19",
           "date": "2022-09-27",
@@ -780,15 +780,22 @@
         {
           "id": "171",
           "date": "2026-10-30",
-          "views": 4,
+          "views": 6,
           "text": "📬   Яндекс Трекер: автоматизируем задачи с помощью почты   Рутина отнимает время, а задачи сыплются, как из рога изобили",
           "url": "https://t.me/noroutine2026/171"
+        },
+        {
+          "id": "173",
+          "date": "2026-11-02",
+          "views": 3,
+          "text": "📊   Проекты и портфели в Яндекс Трекере   Управление проектами и задачами может поглотить много времени и сил. Без четко",
+          "url": "https://t.me/noroutine2026/173"
         }
       ]
     },
     "max": {
       "subscribers": 8,
-      "total_views": 303,
+      "total_views": 312,
       "daily": [
         {
           "date": "2026-10-23",
@@ -866,6 +873,13 @@
           "new_views": 0,
           "posts": 30,
           "subscribers": 8
+        },
+        {
+          "date": "2026-11-03",
+          "total_views": 312,
+          "new_views": 9,
+          "posts": 31,
+          "subscribers": 8
         }
       ],
       "posts": [
@@ -879,7 +893,7 @@
         {
           "id": "mid.ffffbf5e8117157d019d3ab64060227d",
           "date": "2026-03-29",
-          "views": 25,
+          "views": 27,
           "text": "Привет! Как дела?",
           "url": "https://max.ru/channel_noroutine/AZ06tkBgIn0"
         },
@@ -1061,7 +1075,7 @@
         {
           "id": "mid.ffffbf5e8117157d01a17c2d11f34267",
           "date": "2026-10-27",
-          "views": 5,
+          "views": 6,
           "text": "Сколько часов и денег у вас забирает рутина?\n\n⚡Вот бесплатный калькулятор автоматизации: без регистрации и почты, всё сч",
           "url": "https://max.ru/channel_noroutine/AaF8LRHzQmc"
         },
@@ -1075,9 +1089,16 @@
         {
           "id": "mid.ffffbf5e8117157d01a18d17f8435ce7",
           "date": "2026-10-30",
-          "views": 3,
+          "views": 5,
           "text": "📬 Яндекс Трекер: автоматизируем задачи с помощью почты\n\nРутина отнимает время, а задачи сыплются, как из рога изобилия. ",
           "url": "https://max.ru/channel_noroutine/AaGNF_hDXOc"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a19d2f5fc406cc",
+          "date": "2026-11-02",
+          "views": 4,
+          "text": "📊 Проекты и портфели в Яндекс Трекере\n\nУправление проектами и задачами может поглотить много времени и сил. Без четкой с",
+          "url": "https://max.ru/channel_noroutine/AaGdL1_EBsw"
         }
       ]
     }

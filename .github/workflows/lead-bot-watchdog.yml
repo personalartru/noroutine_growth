@@ -1,8 +1,25 @@
 name: Lead bot watchdog
 
+# Единственный сторож цепочки самопереочередей в run-bot.yml (раньше был
+# второй, run-queue.yml, с той же задачей — свели к одному).
+#
+# Основной признак живости — не возраст последнего прогона, а состояние очереди:
+# прогон push мог быть создан 5 минут назад и тут же отменён, и по возрасту
+# цепочка выглядела бы живой. Считаем прогоны бота: если ни один не опрашивает
+# и в очереди нет актуального стоящего — ставим новый. Отдельный случай:
+# queued-прогон стоит без движения дольше STUCK_MIN, значит завис, и его тоже
+# вытесняем. После dispatch проверяем, что прогон действительно встал.
+#
+# В очередь сторож встаёт только когда слот свободен: группа lead-bot-v2
+# хранит одного стоящего, второе поступление отменило бы queued-прогон push.
+#
+# Планировщик GitHub при нагрузке пропускает cron-запуски (на этом репозитории
+# интервалы гуляют от минут до нескольких часов), поэтому сторож — страховка от
+# «цепочка встала», а не способ её гонять.
+
 on:
   schedule:
-    - cron: "17 * * * *"
+    - cron: "*/15 * * * *"
   push:
     branches: [main]
     paths:
@@ -16,46 +33,90 @@ permissions:
 jobs:
   watch:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: Проверить свежесть запусков бота
+      - name: Проверить очередь и оживить цепочку, если она встала
         id: check
         env:
           # PAT: запущенный им прогон продолжит цепочку сам.
-          # GITHUB_TOKEN как запасной вариант: такой прогон цепочку не продолжит.
+          # GITHUB_TOKEN как запасной вариант: у него scope actions:write,
+          # dispatch он тоже может поставить.
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN || secrets.GITHUB_TOKEN }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.LEAD_BOT_TOKEN }}
           LEAD_ADMIN_CHAT_ID: ${{ secrets.LEAD_ADMIN_CHAT_ID }}
+          WORKFLOW: "Run lead bot (GitHub Actions)"
+          REPO: personalartru/noroutine_growth
+          STUCK_MIN: "45"
         run: |
           set -euo pipefail
-          WORKFLOW="Run lead bot (GitHub Actions)"
-          LIMIT_MIN=25
 
-          last=$(gh run list --workflow "$WORKFLOW" --limit 1 \
-            --json status,conclusion,createdAt \
-            --jq '.[0] | "\(.createdAt) \(.status) \(.conclusion)"' || true)
-          echo "Последний запуск: ${last:-нет}"
+          gh run list --repo "$REPO" --workflow "$WORKFLOW" --limit 20 \
+            --json status,updatedAt > /tmp/runs.json
+          # running — прогоны опрашивателя в работе; busy — в работе или в
+          # очереди; age — минуты с самой свежей отметки updatedAt (у идущего
+          # цикла она обновляется, у зависшего в очереди — нет).
+          python3 - > /tmp/state.txt <<'PY'
+          import datetime, json
+          runs = json.load(open("/tmp/runs.json"))
+          live = {"queued", "pending", "waiting", "requested"}
+          now = datetime.datetime.now(datetime.timezone.utc)
+          def age(stamp):
+              d = datetime.datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%SZ")
+              return int((now - d.replace(tzinfo=datetime.timezone.utc)).total_seconds() // 60)
+          running = sum(1 for r in runs if r["status"] == "in_progress")
+          busy = running + sum(1 for r in runs if r["status"] in live)
+          age = min((age(r["updatedAt"]) for r in runs), default=9999)
+          print(running, busy, age)
+          PY
+          read -r running busy age < /tmp/state.txt
+          echo "В работе: $running, в очереди: $busy, последняя отметка: $age мин назад"
 
-          if [[ -z "${last:-}" ]]; then
-            age=9999
-          else
-            created=$(echo "$last" | cut -d' ' -f1)
-            age=$(python3 -c "import datetime,sys; c=datetime.datetime.strptime(sys.argv[1], '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=datetime.timezone.utc); print(int((datetime.datetime.now(datetime.timezone.utc)-c).total_seconds()//60))" "$created")
-          fi
-          echo "Возраст последнего запуска: ${age} мин"
-
-          if [[ $age -gt $LIMIT_MIN ]]; then
-            echo "Бот молчит дольше ${LIMIT_MIN} минут — перезапускаю"
-            gh workflow run "$WORKFLOW" --ref "${{ github.ref_name }}" \
-              -f minutes=9 || echo "не удалось запустить"
+          notify() {
             if [[ -n "${TELEGRAM_BOT_TOKEN:-}" && -n "${LEAD_ADMIN_CHAT_ID:-}" ]]; then
               curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
                 --data-urlencode "chat_id=${LEAD_ADMIN_CHAT_ID}" \
-                --data-urlencode "text=Сторож: бот не работал ${age} минут — я его перезапустил. Если так повторяется — проверьте секрет DISPATCH_TOKEN." \
-                >/dev/null || true
+                --data-urlencode "text=$1" >/dev/null || true
             fi
-            echo "restarted=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "Бот жив, перезапуск не нужен"
+          }
+
+          if (( running > 0 )); then
+            echo "Цикл опрашивает — новый прогон не нужен"
             echo "restarted=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+
+          if (( busy > 0 )) && (( age <= STUCK_MIN )); then
+            echo "Слот занят прогоном в очереди, он и опросит свежий main"
+            echo "restarted=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if (( busy > 0 )); then
+            reason="queued-прогон завис: в очереди $busy, тишина $age мин"
+          else
+            reason="цепочка встала: очередь пуста, тишина $age мин"
+          fi
+          echo "$reason — ставлю новый цикл"
+          notify "Сторож: $reason. Ставлю новый цикл бота."
+          # minutes не передаём: прогон берёт дефолт из workflow.
+          for attempt in 1 2 3; do
+            if gh workflow run "$WORKFLOW" --repo "$REPO" --ref main; then
+              sleep 10
+              after=$(gh run list --repo "$REPO" --workflow "$WORKFLOW" --limit 10 \
+                        --json status --jq '[.[] | select(.status == "queued"
+                          or .status == "pending" or .status == "waiting"
+                          or .status == "requested" or .status == "in_progress")]
+                        | length')
+              if (( after > 0 )); then
+                echo "Цепочка восстановлена (попытка $attempt, прогонов в очереди: $after)"
+                echo "restarted=true" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+            fi
+            echo "::warning::попытка $attempt: цикл не встал в очередь"
+          done
+          echo "::error::не удалось оживить цепочку за 3 попытки — нужен ручной gh workflow run \"$WORKFLOW\" --repo $REPO"
+          notify "Сторож: не смог поставить цикл бота за 3 попытки. Вручную: gh workflow run \"$WORKFLOW\" --repo $REPO"
+          echo "restarted=false" >> "$GITHUB_OUTPUT"
+          exit 1

@@ -13,7 +13,6 @@ on:
     paths:
       - "bot.py"
       - "max_lead.py"
-      - "optimizer.py"
       - "footer.py"
       - "requirements.txt"
       - ".github/workflows/run-bot.yml"
@@ -69,7 +68,6 @@ jobs:
             .max_pending.json
             .max_comment_chat
             .max_dialogs.json
-            .max_optimizer.json
           key: lead-bot-offset-${{ github.run_id }}
           restore-keys: lead-bot-offset-
       - name: Опрашивать Telegram и MAX
@@ -101,7 +99,6 @@ jobs:
             .max_pending.json
             .max_comment_chat
             .max_dialogs.json
-            .max_optimizer.json
           key: lead-bot-offset-${{ github.run_id }}
       - name: Поставить в очередь следующий цикл
         if: always()

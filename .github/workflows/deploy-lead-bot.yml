@@ -6,7 +6,6 @@ on:
     paths:
       - "bot.py"
       - "max_lead.py"
-      - "optimizer.py"
       - "footer.py"
       - "requirements.txt"
       - "deploy/k8s/**"

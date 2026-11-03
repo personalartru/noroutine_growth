@@ -11,6 +11,4 @@ deploy/k8s/sa-kubeconfig.yaml
 .max_pending.json
 .max_dialogs.json
 .max_comment_chat
-.max_optimizer.json
-optimizer-preview.html
 __pycache__/

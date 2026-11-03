@@ -6,13 +6,15 @@
 - если не подписан: приветствие + кнопки «Подписаться на канал» и «Я подписался»;
 - кнопка «Я подписался» → проверка подписки и выдача архива;
 - кнопка «Хочу такое же под свой процесс» → просьба описать задачу;
-- кнопка «Оптимизатор» (под кнопкой заявки) → пошаговый расчёт рутины: сфера →
-  люди → операции → часы и стоимость → инструменты → экономия и чек-лист →
-  бюджет, дисклеймер, обратная связь. Логика целиком в optimizer.py, здесь
-  только транспорт MAX и хранение шага диалога по пользователю;
 - любой другой текст → заявка: владельцу уходит уведомление с данными
   пользователя, пользователю в личку — «Принял запрос — изучаю и скоро свяжусь
   с вами.» вместе с архивом.
+
+«Оптимизатор» (пошаговый расчёт рутины) из этого бота вырезан: он живёт
+отдельным проектом и отдельным ботом @se14730534_1_bot
+(personalartru/noroutine-optimizer). Здесь остались только указатели на него —
+для устаревших кнопок `opt:` у тех, кто открыл старую переписку, и для слов
+«оптимизатор» / «калькулятор» в переписке.
 
 Особенности MAX: бот пишет только тем, кто его запустил, поэтому если личка
 недоступна, в чат обсуждения уходит кнопка-диплинк «Открыть бота».
@@ -27,8 +29,6 @@ import time
 
 import requests
 
-import optimizer
-
 MAX_API = os.environ.get("MAX_API_BASE", "https://platform-api2.max.ru")
 TOKEN = os.environ["MAX_BOT_TOKEN"]
 CHANNEL_ID = os.environ["MAX_CHANNEL_ID"]
@@ -39,8 +39,10 @@ OFFSET_FILE = os.environ.get("MAX_OFFSET_FILE", ".max_offset")
 PENDING_FILE = os.environ.get("MAX_PENDING_FILE", ".max_pending.json")
 COMMENT_CHAT_FILE = os.environ.get("MAX_COMMENT_CHAT_FILE", ".max_comment_chat")
 DIALOGS_FILE = os.environ.get("MAX_DIALOGS_FILE", ".max_dialogs.json")
-OPTIMIZER_FILE = os.environ.get("MAX_OPTIMIZER_FILE", ".max_optimizer.json")
 BOT_USERNAME = os.environ.get("MAX_BOT_USERNAME", "")
+# Отдельный бот «Оптимизатор»: сюда ведём всех, кто нажал старую кнопку или
+# написал слово «оптимизатор»/«калькулятор» в этом боте.
+OPT_BOT_URL = os.environ.get("MAX_OPT_BOT_URL", "https://max.ru/se14730534_1_bot")
 
 # ── Тексты (совпадают с Telegram-ботом) ──────────────────────────────────────
 TEXT_HELLO = (
@@ -80,8 +82,16 @@ TEXT_NOT_SUBSCRIBED = "Подписка пока не видна. Подпиши
 BTN_SUB = {"type": "link", "text": "Подписаться на канал", "url": "https://max.ru/channel_noroutine"}
 BTN_CHECK = {"type": "callback", "text": "Я подписался", "payload": "check_sub"}
 BTN_TASK = {"type": "callback", "text": "Хочу такое же под свой процесс", "payload": "want_task"}
-BTN_OPT = {"type": "callback", "text": "Оптимизатор", "payload": "opt:start"}
+BTN_OPT_BOT = {"type": "link", "text": "Открыть «Оптимизатор»", "url": OPT_BOT_URL}
 BTN_CHANNEL = {"type": "link", "text": "Канал в MAX", "url": "https://max.ru/channel_noroutine"}
+
+TEXT_OPT_MOVED = (
+    "«Оптимизатор» теперь отдельный бот — там шесть коротких вопросов и на "
+    "выходе часы рутины, их стоимость и экономия.\n\n"
+    f"Вот он: <a href=\"{OPT_BOT_URL}\">@se14730534_1_bot</a>\n\n"
+    "А если нужна автоматизация под ваш процесс — опишите задачу здесь одним "
+    "сообщением."
+)
 
 
 def bot_username():
@@ -299,7 +309,7 @@ def deliver_material(user_id, source=None, chat_id=None, post_id=None, chat_type
     """Выдаёт архив: в личку, при неудаче — комментарием с мостом к боту."""
     token = upload_pack()
     ok = respond(user_id, chat_id, post_id, chat_type, TEXT_PACK,
-                 file_token=token, buttons=[[BTN_TASK], [BTN_OPT]])
+                 file_token=token, buttons=[[BTN_TASK]])
     if ok:
         print("Архив выдан:", user_id)
     if ADMIN_CHAT_ID:
@@ -471,109 +481,21 @@ def save_offset(offset):
         pass
 
 
-# ── Оптимизатор: состояние и транспорт ───────────────────────────────────────
-def load_sessions():
-    try:
-        with open(OPTIMIZER_FILE, encoding="utf-8") as f:
-            return json.load(f)
-    except (OSError, ValueError):
-        return {}
+# ── Указатель на отдельного бота «Оптимизатор» ───────────────────────────────
+def point_to_optimizer_bot(user_id, chat_id, callback_id=None):
+    """Отвечаем там, где пользователь рассчитывал увидеть «Оптимизатор».
 
-
-def save_sessions(sessions):
-    try:
-        with open(OPTIMIZER_FILE, "w", encoding="utf-8") as f:
-            json.dump(sessions, f, ensure_ascii=False)
-    except OSError as e:
-        print("Не удалось сохранить состояние оптимизатора:", e)
-
-
-def session_for(user_id):
-    """Активная сессия оптимизатора; просроченную выбрасываем и отдаём None."""
-    sessions = load_sessions()
-    session = sessions.get(str(user_id))
-    if not session:
-        return None
-    if optimizer.is_expired(session):
-        sessions.pop(str(user_id), None)
-        save_sessions(sessions)
-        return None
-    return session
-
-
-def store_session(user_id, session):
-    """Держим только живой шаг диалога: финал и отмена очищают файл."""
-    sessions = load_sessions()
-    key = str(user_id)
-    if not session or session.get("step") == "done":
-        sessions.pop(key, None)
-    else:
-        sessions[key] = session
-    save_sessions(sessions)
-
-
-def wants_text(user_id):
-    """Пользователь в шаге, где бот ждёт именно текст (число или заявка)."""
-    session = session_for(user_id)
-    return session if session and optimizer.expects_text(session) else None
-
-
-def deliver_messages(user_id, chat_id, messages, callback_id=None):
-    """Шаги оптимизатора — отдельными сообщениями, как их собрал optimizer.py.
-
-    Личка недоступна (бот пишет только запустившим его) — отвечаем на callback,
-    чтобы нажатие кнопки не выглядело потерянным.
+    Старые переписки держат кнопку `opt:` — нажатие не должно выглядеть
+    потерянным, поэтому отвечаем на callback, а в личку пишем, только если она
+    доступна.
     """
-    delivered = False
-    for index, message in enumerate(messages):
-        text = (message or {}).get("text")
-        if not text:
-            continue
-        if chat_id and send_direct(user_id, text, buttons=message.get("buttons"),
-                                   chat_id=chat_id):
-            delivered = True
-            continue
-        if not delivered and index == 0:
-            delivered = answer_callback(callback_id, text)
-    if not delivered and callback_id and messages:
-        delivered = answer_callback(callback_id, messages[0]["text"])
-    return delivered
-
-
-def notify_admin_about_calc(user_id, name, request, username, session):
-    """Заявка с финального шага: текст пользователя плюс его же расчёт."""
-    calc = session.get("calc") or {}
-    if not calc:
-        return forward_to_admin(user_id, name, request, username)
-    tools = ", ".join(t["label"] for t in (session.get("sav") or {}).get("tools", []))
-    summary = (f"{calc.get('sphere_label')} · {calc.get('people')} чел · "
-               f"{int(calc.get('hours') or 0)} ч/мес рутины · "
-               f"~{int(calc.get('cost_month') or 0)} ₽/мес")
-    if tools:
-        summary += f" · инструменты: {tools}"
-    return forward_to_admin(user_id, name, f"{request}\n\n[Оптимизатор] {summary}",
-                            username)
-
-
-def handle_optimizer(user_id, chat_id, payload=None, text=None, callback_id=None,
-                     name="", username=None):
-    """Один шаг оптимизатора: нажатие кнопки (payload) или текст пользователя."""
-    session = session_for(user_id) or optimizer.new_session()
-    if payload is not None:
-        session, messages = optimizer.dispatch(payload, session)
-    else:
-        session, messages = optimizer.dispatch_text(text, session)
-
-    for message in messages:
-        request = (message or {}).get("admin")
-        if request:
-            notify_admin_about_calc(user_id, name, request, username, session)
-
-    delivered = deliver_messages(user_id, chat_id, messages, callback_id)
-    store_session(user_id, session)
-    print(f"optimizer: user={user_id} шаг={session.get('step')} "
-          f"сообщений={len(messages)} доставлено={delivered}")
-    return delivered
+    if chat_id and send_direct(user_id, TEXT_OPT_MOVED, buttons=[[BTN_OPT_BOT]],
+                               chat_id=chat_id):
+        return True
+    if callback_id:
+        return answer_callback(callback_id, "Оптимизатор стал отдельным ботом: "
+                                           "@se14730534_1_bot")
+    return False
 
 
 # ── Обработчики ─────────────────────────────────────────────────────────────
@@ -601,9 +523,10 @@ def handle_callback(callback):
     chat_id = dialog_for(user_id) or user_id
 
     if payload.startswith("opt:"):
-        handle_optimizer(user_id, chat_id, payload=payload, callback_id=callback_id,
-                         name=user.get("name") or user.get("first_name") or "",
-                         username=user.get("username"))
+        # Кнопка из старой переписки: расчёт живёт отдельным ботом, показываем
+        # дорогу вместо молчания.
+        print(f"устаревший opt:-callback: user={user_id}, payload={payload}")
+        point_to_optimizer_bot(user_id, chat_id, callback_id=callback_id)
         return
 
     if payload == "want_task":
@@ -642,25 +565,15 @@ def handle_text(user_id, chat_id, post_id, chat_type, name, username, text):
         respond(user_id, chat_id, post_id, chat_type, TEXT_HELLO)
         return
 
-    # Оптимизатор: отмена, запуск словом из текста, и шаги, где ждём ответ
-    # сообщением (своё количество людей, текст заявки). Всё это до ветки
-    # «любой текст = заявка», иначе расчёт превратится в лид.
+    # «Оптимизатор» ушёл отдельным ботом: на те же слова (и на «отмену»
+    # старого расчёта) показываем дорогу к нему. Всё это до ветки
+    # «любой текст = заявка», чтобы одно слово не превращалось в лид.
     target = chat_id or dialog_for(user_id)
-    if lowered in ("отмена", "отменить", "стоп", "хватит", "cancel", "/cancel"):
-        if session_for(user_id):
-            store_session(user_id, None)
-            respond(user_id, target, post_id, chat_type,
-                    "Оптимизатор остановил. Продолжить — кнопкой «Оптимизатор».")
-            return
-
     if lowered in ("оптимизатор", "калькулятор", "расчёт", "расчет", "экономия",
-                   "посчитай"):
-        handle_optimizer(user_id, target, payload="opt:start", name=name,
-                         username=username)
-        return
-
-    if wants_text(user_id):
-        handle_optimizer(user_id, target, text=text, name=name, username=username)
+                   "посчитай", "отмена", "отменить", "стоп", "хватит", "cancel",
+                   "/cancel"):
+        respond(user_id, target, post_id, chat_type, TEXT_OPT_MOVED,
+                buttons=[[BTN_OPT_BOT]])
         return
 
     if forward_to_admin(user_id, name, text, username):

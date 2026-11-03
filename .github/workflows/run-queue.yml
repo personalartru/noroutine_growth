@@ -22,6 +22,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
           WF: "Run lead bot (GitHub Actions)"
+          # Без checkout каталог не git-репозиторий, и gh не выводит репозиторий
+          # из контекста: «failed to determine base repo». Путь задаём явно.
+          REPO: personalartru/noroutine_growth
         run: |
           set -euo pipefail
           if [ -z "$GH_TOKEN" ]; then
@@ -29,8 +32,8 @@ jobs:
             exit 1
           fi
           # Свой workflow (watchdog) в счёт не идёт: считаем только прогоны бота.
-          busy=$(gh run list --workflow "$WF" --limit 20 \
-                   --json status,conclusion \
+          busy=$(gh run list --repo "$REPO" --workflow "$WF" --limit 20 \
+                   --json status \
                    --jq '[.[] | select(.status == "queued" or .status == "pending"
                                       or .status == "waiting" or .status == "requested"
                                       or .status == "in_progress")] | length')
@@ -39,5 +42,12 @@ jobs:
             echo "Цепочка жива — новый прогон не нужен"
             exit 0
           fi
-          gh workflow run "$WF" --ref main
-          echo "Пусто: следующий цикл поставлен в очередь"
+          gh workflow run "$WF" --repo "$REPO" --ref main
+          sleep 5
+          after=$(gh run list --repo "$REPO" --workflow "$WF" --limit 5 --json status \
+                    --jq '[.[] | select(.status == "queued" or .status == "pending"
+                                       or .status == "waiting" or .status == "requested"
+                                       or .status == "in_progress")] | length')
+          echo "Прогонов после dispatch: $after"
+          [ "$after" -gt 0 ] && echo "Цепочка восстановлена" \
+            || { echo "::error::dispatch прошёл, но очереди нет"; exit 1; }

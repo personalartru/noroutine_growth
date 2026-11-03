@@ -16,6 +16,22 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt
+      - name: Проверка MAX-лид-бота (без сети и токена)
+        # 23 проверки на заглушках MAX API: клавиатура архива, заявки,
+        # устаревшие opt:-кнопки и слова-указатели на @se14730534_1_bot.
+        # Секретов не требует — токен подставляется тестовый.
+        run: python3 tools/check_max_lead.py
+      - name: Проверка, что «Оптимизатор» не вернулся в этот репозиторий
+        run: |
+          if [ -f optimizer.py ]; then
+            echo "::error::optimizer.py вернулся в репозиторий — он живёт в personalartru/noroutine-optimizer"
+            exit 1
+          fi
+          if grep -q "import optimizer\|MAX_OPTIMIZER_FILE" max_lead.py bot.py; then
+            echo "::error::лид-бот снова тянет стейт-машину оптимизатора"
+            exit 1
+          fi
+          echo "Оптимизатор живёт отдельно, лид-бот его не импортирует"
       - name: Собрать лид-магнит
         run: python build_materials.py
       - name: Диагностика

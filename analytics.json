@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-11-05T14:18:20+00:00",
+  "updated_at": "2026-11-05T23:25:59+00:00",
   "channels": {
     "telegram": {
       "subscribers": 18,
-      "total_views": 3060,
+      "total_views": 3063,
       "daily": [
         {
           "date": "2026-10-23",
@@ -98,20 +98,13 @@
         },
         {
           "date": "2026-11-05",
-          "total_views": 3060,
-          "new_views": 0,
+          "total_views": 3063,
+          "new_views": 3,
           "posts": 111,
           "subscribers": 18
         }
       ],
       "posts": [
-        {
-          "id": "20",
-          "date": "2022-09-27",
-          "views": 37,
-          "text": "https://telegra.ph/Kakie-est-metodologii-upravleniya-proektami-09-27    #менеджмент   #управлениепроектами   #projectman",
-          "url": "https://t.me/noroutine2026/20"
-        },
         {
           "id": "21",
           "date": "2022-09-29",
@@ -804,12 +797,19 @@
           "views": 4,
           "text": "🤖   Как Алиса AI помогает с Яндекс Трекером?   Алиса AI (для бизнеса) поможет повысить продуктивность при работе с Яндек",
           "url": "https://t.me/noroutine2026/175"
+        },
+        {
+          "id": "177",
+          "date": "2026-11-05",
+          "views": 3,
+          "text": "⏰   Больше не забудешь про дедлайн: синхронизируем Трекер с Календарём   Дедлайны в Яндекс Трекере — это как записки на ",
+          "url": "https://t.me/noroutine2026/177"
         }
       ]
     },
     "max": {
       "subscribers": 7,
-      "total_views": 320,
+      "total_views": 325,
       "daily": [
         {
           "date": "2026-10-23",
@@ -904,8 +904,8 @@
         },
         {
           "date": "2026-11-05",
-          "total_views": 320,
-          "new_views": 3,
+          "total_views": 325,
+          "new_views": 5,
           "posts": 32,
           "subscribers": 7
         }
@@ -1124,7 +1124,7 @@
         {
           "id": "mid.ffffbf5e8117157d01a19d2f5fc406cc",
           "date": "2026-11-02",
-          "views": 4,
+          "views": 5,
           "text": "📊 Проекты и портфели в Яндекс Трекере\n\nУправление проектами и задачами может поглотить много времени и сил. Без четкой с",
           "url": "https://max.ru/channel_noroutine/AaGdL1_EBsw"
         },
@@ -1134,6 +1134,13 @@
           "views": 6,
           "text": "🤖 Как Алиса AI помогает с Яндекс Трекером?\n\nАлиса AI (для бизнеса) поможет повысить продуктивность при работе с Яндекс Т",
           "url": "https://max.ru/channel_noroutine/AaGh6IBlOs0"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a1ac4818e40653",
+          "date": "2026-11-05",
+          "views": 4,
+          "text": "⏰ Больше не забудешь про дедлайн: синхронизируем Трекер с Календарём\n\nДедлайны в Яндекс Трекере — это как записки на хол",
+          "url": "https://max.ru/channel_noroutine/AaGsSBjkBlM"
         }
       ]
     }

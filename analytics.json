@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-08T12:57:51+00:00",
+  "updated_at": "2026-11-08T21:50:20+00:00",
   "channels": {
     "telegram": {
       "subscribers": 18,
@@ -947,7 +947,7 @@
         {
           "date": "2026-11-08",
           "total_views": 328,
-          "new_views": 1,
+          "new_views": 0,
           "posts": 34,
           "subscribers": 7
         }

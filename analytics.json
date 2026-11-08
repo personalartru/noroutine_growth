@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-08T05:08:47+00:00",
+  "updated_at": "2026-11-08T12:57:51+00:00",
   "channels": {
     "telegram": {
       "subscribers": 18,
@@ -830,7 +830,7 @@
     },
     "max": {
       "subscribers": 7,
-      "total_views": 327,
+      "total_views": 328,
       "daily": [
         {
           "date": "2026-10-23",
@@ -946,8 +946,8 @@
         },
         {
           "date": "2026-11-08",
-          "total_views": 327,
-          "new_views": 0,
+          "total_views": 328,
+          "new_views": 1,
           "posts": 34,
           "subscribers": 7
         }
@@ -1187,7 +1187,7 @@
         {
           "id": "mid.ffffbf5e8117157d01a1b1589eb924b1",
           "date": "2026-11-06",
-          "views": 2,
+          "views": 3,
           "text": "🍅 Метод Помидора: как вернуть время себе\n\nРутина часто поглощает наше время, оставляя лишь крошки для креативности и сер",
           "url": "https://max.ru/channel_noroutine/AaGxWJ65JLE"
         }

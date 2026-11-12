@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-11-11T13:47:20+00:00",
+  "updated_at": "2026-11-12T00:14:20+00:00",
   "channels": {
     "telegram": {
       "subscribers": 18,
-      "total_views": 3088,
+      "total_views": 3092,
       "daily": [
         {
           "date": "2026-10-23",
@@ -144,16 +144,16 @@
           "new_views": 0,
           "posts": 115,
           "subscribers": 18
+        },
+        {
+          "date": "2026-11-12",
+          "total_views": 3092,
+          "new_views": 4,
+          "posts": 116,
+          "subscribers": 18
         }
       ],
       "posts": [
-        {
-          "id": "24",
-          "date": "2023-03-03",
-          "views": 34,
-          "text": "Как настроить SLA и график работы в Трекере?   https://telegra.ph/Kak-nastroit-SLA-i-grafik-raboty-v-Trekere-03-03    #м",
-          "url": "https://t.me/noroutine2026/24"
-        },
         {
           "id": "25",
           "date": "2023-03-03",
@@ -290,7 +290,7 @@
         {
           "id": "49",
           "date": "2024-02-17",
-          "views": 92,
+          "views": 93,
           "text": "Как просто и быстро сделать чат-бота в телеге? Я уже знаю ответ на этот вопрос). Я всегда хотел изучить Python, но это о",
           "url": "https://t.me/noroutine2026/49"
         },
@@ -846,12 +846,19 @@
           "views": 4,
           "text": "🗂   Вики + Алиса AI: база знаний, которая сама отвечает на вопросы   Как часто вы получаете вопросы вроде «где шаблон КП",
           "url": "https://t.me/noroutine2026/183"
+        },
+        {
+          "id": "185",
+          "date": "2026-11-11",
+          "views": 3,
+          "text": "👥   Группы пользователей в Трекере: избавьтесь от рутинных задач   Знакомая ситуация: новый сотрудник в команде — и адми",
+          "url": "https://t.me/noroutine2026/185"
         }
       ]
     },
     "max": {
       "subscribers": 7,
-      "total_views": 337,
+      "total_views": 342,
       "daily": [
         {
           "date": "2026-10-23",
@@ -992,6 +999,13 @@
           "new_views": 0,
           "posts": 36,
           "subscribers": 7
+        },
+        {
+          "date": "2026-11-12",
+          "total_views": 342,
+          "new_views": 5,
+          "posts": 37,
+          "subscribers": 7
         }
       ],
       "posts": [
@@ -1061,7 +1075,7 @@
         {
           "id": "mid.ffffbf5e8117157d01a1446ab2321551",
           "date": "2026-10-16",
-          "views": 6,
+          "views": 7,
           "text": "🔒 Как обезопасить данные на облачных хранилищах?\n\nСбой в Яндекс Облаке и Яндекс Диске стал настоящим испытанием для мног",
           "url": "https://max.ru/channel_noroutine/AaFEarIyFVE"
         },
@@ -1082,7 +1096,7 @@
         {
           "id": "mid.ffffbf5e8117157d01a14a33ed01474a",
           "date": "2026-10-17",
-          "views": 5,
+          "views": 6,
           "text": "🚀 OpenCode: автоматизация процессов на максимум!\n\nВремя — это самый ценный ресурс для IT-команд и digital-агентств. Авто",
           "url": "https://max.ru/channel_noroutine/AaFKM-0BR0o"
         },
@@ -1246,6 +1260,13 @@
           "views": 3,
           "text": "🗂 Вики + Алиса AI: база знаний, которая сама отвечает на вопросы\n\nКак часто вы получаете вопросы вроде «где шаблон КП?» ",
           "url": "https://max.ru/channel_noroutine/AaHGE0ZPf38"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a1cb1ec434220b",
+          "date": "2026-11-11",
+          "views": 3,
+          "text": "👥 Группы пользователей в Трекере: избавьтесь от рутинных задач\n\nЗнакомая ситуация: новый сотрудник в команде — и админис",
+          "url": "https://max.ru/channel_noroutine/AaHLHsQ0Igs"
         }
       ]
     }

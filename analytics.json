@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-11-13T14:12:19+00:00",
+  "updated_at": "2026-11-13T23:22:39+00:00",
   "channels": {
     "telegram": {
       "subscribers": 18,
-      "total_views": 3095,
+      "total_views": 3096,
       "daily": [
         {
           "date": "2026-10-23",
@@ -154,20 +154,13 @@
         },
         {
           "date": "2026-11-13",
-          "total_views": 3095,
-          "new_views": 0,
+          "total_views": 3096,
+          "new_views": 1,
           "posts": 117,
           "subscribers": 18
         }
       ],
       "posts": [
-        {
-          "id": "26",
-          "date": "2023-03-13",
-          "views": 37,
-          "text": "Как создавать задачи в Трекере?   #менеджмент   #управлениепроектами   #projectmanager   #управление &nbsp; #яндекстреке",
-          "url": "https://t.me/noroutine2026/26"
-        },
         {
           "id": "27",
           "date": "2023-03-29",
@@ -860,12 +853,19 @@
           "views": 3,
           "text": "⌚   Три способа фиксировать время в Яндекс Трекере — какой выбрать?   Держать сроки под контролем — это полдела. Вторая ",
           "url": "https://t.me/noroutine2026/187"
+        },
+        {
+          "id": "188",
+          "date": "2026-11-13",
+          "views": 1,
+          "text": "https://youtu.be/afNJ7uKhHsU   Яндекс Трекер | Обзор фич    🎬   Продолжаем серию про Яндекс Трекер&#33; В этом видео я д",
+          "url": "https://t.me/noroutine2026/188"
         }
       ]
     },
     "max": {
       "subscribers": 7,
-      "total_views": 349,
+      "total_views": 352,
       "daily": [
         {
           "date": "2026-10-23",
@@ -1016,7 +1016,7 @@
         },
         {
           "date": "2026-11-13",
-          "total_views": 349,
+          "total_views": 352,
           "new_views": 3,
           "posts": 38,
           "subscribers": 7
@@ -1033,7 +1033,7 @@
         {
           "id": "mid.ffffbf5e8117157d019d3ab64060227d",
           "date": "2026-03-29",
-          "views": 29,
+          "views": 30,
           "text": "Привет! Как дела?",
           "url": "https://max.ru/channel_noroutine/AZ06tkBgIn0"
         },
@@ -1288,6 +1288,13 @@
           "views": 4,
           "text": "⌚ Три способа фиксировать время в Яндекс Трекере — какой выбрать?\n\nДержать сроки под контролем — это полдела. Вторая пол",
           "url": "https://max.ru/channel_noroutine/AaHQdb54MCk"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a1d6cd237f234d",
+          "date": "2026-11-13",
+          "views": 2,
+          "text": "https://rutube.ru/video/7282949b1f18a1a4a0a255acda1f9799/\n\nЯндекс Трекер | Обзор фич\n\n🎬 Продолжаем серию про Яндекс Трек",
+          "url": "https://max.ru/channel_noroutine/AaHWzSN_I00"
         }
       ]
     }

@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-13T05:44:39+00:00",
+  "updated_at": "2026-11-13T14:12:19+00:00",
   "channels": {
     "telegram": {
       "subscribers": 18,
@@ -865,7 +865,7 @@
     },
     "max": {
       "subscribers": 7,
-      "total_views": 346,
+      "total_views": 349,
       "daily": [
         {
           "date": "2026-10-23",
@@ -1016,8 +1016,8 @@
         },
         {
           "date": "2026-11-13",
-          "total_views": 346,
-          "new_views": 0,
+          "total_views": 349,
+          "new_views": 3,
           "posts": 38,
           "subscribers": 7
         }
@@ -1033,7 +1033,7 @@
         {
           "id": "mid.ffffbf5e8117157d019d3ab64060227d",
           "date": "2026-03-29",
-          "views": 28,
+          "views": 29,
           "text": "Привет! Как дела?",
           "url": "https://max.ru/channel_noroutine/AZ06tkBgIn0"
         },
@@ -1278,14 +1278,14 @@
         {
           "id": "mid.ffffbf5e8117157d01a1cb1ec434220b",
           "date": "2026-11-11",
-          "views": 3,
+          "views": 4,
           "text": "👥 Группы пользователей в Трекере: избавьтесь от рутинных задач\n\nЗнакомая ситуация: новый сотрудник в команде — и админис",
           "url": "https://max.ru/channel_noroutine/AaHLHsQ0Igs"
         },
         {
           "id": "mid.ffffbf5e8117157d01a1d075be783029",
           "date": "2026-11-12",
-          "views": 3,
+          "views": 4,
           "text": "⌚ Три способа фиксировать время в Яндекс Трекере — какой выбрать?\n\nДержать сроки под контролем — это полдела. Вторая пол",
           "url": "https://max.ru/channel_noroutine/AaHQdb54MCk"
         }

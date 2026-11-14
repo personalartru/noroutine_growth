@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-13T23:22:39+00:00",
+  "updated_at": "2026-11-14T05:33:53+00:00",
   "channels": {
     "telegram": {
       "subscribers": 18,
@@ -157,6 +157,13 @@
           "total_views": 3096,
           "new_views": 1,
           "posts": 117,
+          "subscribers": 18
+        },
+        {
+          "date": "2026-11-14",
+          "total_views": 3096,
+          "new_views": 0,
+          "posts": 118,
           "subscribers": 18
         }
       ],
@@ -1019,6 +1026,13 @@
           "total_views": 352,
           "new_views": 3,
           "posts": 38,
+          "subscribers": 7
+        },
+        {
+          "date": "2026-11-14",
+          "total_views": 352,
+          "new_views": 0,
+          "posts": 39,
           "subscribers": 7
         }
       ],

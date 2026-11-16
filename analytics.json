@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-11-16T05:30:43+00:00",
+  "updated_at": "2026-11-16T15:11:51+00:00",
   "channels": {
     "telegram": {
       "subscribers": 18,
-      "total_views": 3113,
+      "total_views": 3114,
       "daily": [
         {
           "date": "2026-10-23",
@@ -175,20 +175,13 @@
         },
         {
           "date": "2026-11-16",
-          "total_views": 3113,
-          "new_views": 0,
+          "total_views": 3114,
+          "new_views": 1,
           "posts": 118,
           "subscribers": 18
         }
       ],
       "posts": [
-        {
-          "id": "27",
-          "date": "2023-03-29",
-          "views": 38,
-          "text": "​  TGStat проводит масштабное исследование аудитории Telegram 2023.    Команда подготовила простой, но подробный опрос, ",
-          "url": "https://t.me/noroutine2026/27"
-        },
         {
           "id": "28",
           "date": "2023-03-30",
@@ -881,12 +874,19 @@
           "views": 4,
           "text": "https://youtu.be/afNJ7uKhHsU   Яндекс Трекер | Обзор фич    🎬   Продолжаем серию про Яндекс Трекер&#33; В этом видео я д",
           "url": "https://t.me/noroutine2026/188"
+        },
+        {
+          "id": "189",
+          "date": "2026-11-16",
+          "views": 1,
+          "text": "Яндекс Трекер | Обзор фич в карточках   #бизнесПроцессы   #ЯндексТрекер   #AI   #автоматизация",
+          "url": "https://t.me/noroutine2026/189"
         }
       ]
     },
     "max": {
       "subscribers": 7,
-      "total_views": 354,
+      "total_views": 360,
       "daily": [
         {
           "date": "2026-10-23",
@@ -1058,8 +1058,8 @@
         },
         {
           "date": "2026-11-16",
-          "total_views": 354,
-          "new_views": 0,
+          "total_views": 360,
+          "new_views": 6,
           "posts": 39,
           "subscribers": 7
         }
@@ -1082,7 +1082,7 @@
         {
           "id": "mid.ffffbf5e8117157d019d3e4740753338",
           "date": "2026-03-30",
-          "views": 23,
+          "views": 24,
           "text": "Тест",
           "url": "https://max.ru/channel_noroutine/AZ0-R0B1Mzg"
         },
@@ -1096,7 +1096,7 @@
         {
           "id": "mid.ffffbf5e8117157d019d67ce164b5543",
           "date": "2026-04-07",
-          "views": 25,
+          "views": 26,
           "text": "https://rutube.ru/video/9717098d5b775538052c254cd4719b14/",
           "url": "https://max.ru/channel_noroutine/AZ1nzhZLVUM"
         },
@@ -1327,16 +1327,23 @@
         {
           "id": "mid.ffffbf5e8117157d01a1d075be783029",
           "date": "2026-11-12",
-          "views": 5,
+          "views": 6,
           "text": "⌚ Три способа фиксировать время в Яндекс Трекере — какой выбрать?\n\nДержать сроки под контролем — это полдела. Вторая пол",
           "url": "https://max.ru/channel_noroutine/AaHQdb54MCk"
         },
         {
           "id": "mid.ffffbf5e8117157d01a1d6cd237f234d",
           "date": "2026-11-13",
-          "views": 3,
+          "views": 5,
           "text": "https://rutube.ru/video/7282949b1f18a1a4a0a255acda1f9799/\n\nЯндекс Трекер | Обзор фич\n\n🎬 Продолжаем серию про Яндекс Трек",
           "url": "https://max.ru/channel_noroutine/AaHWzSN_I00"
+        },
+        {
+          "id": "mid.ffffbf5e8117157d01a1e40f8808567d",
+          "date": "2026-11-16",
+          "views": 1,
+          "text": "Яндекс Трекер | Обзор фич в карточках",
+          "url": "https://max.ru/channel_noroutine/AaHkD4gIVn0"
         }
       ]
     }

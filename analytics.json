@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-11-16T15:11:51+00:00",
+  "updated_at": "2026-11-17T01:44:06+00:00",
   "channels": {
     "telegram": {
       "subscribers": 18,
-      "total_views": 3114,
+      "total_views": 3115,
       "daily": [
         {
           "date": "2026-10-23",
@@ -178,6 +178,13 @@
           "total_views": 3114,
           "new_views": 1,
           "posts": 118,
+          "subscribers": 18
+        },
+        {
+          "date": "2026-11-17",
+          "total_views": 3115,
+          "new_views": 1,
+          "posts": 119,
           "subscribers": 18
         }
       ],
@@ -878,7 +885,7 @@
         {
           "id": "189",
           "date": "2026-11-16",
-          "views": 1,
+          "views": 2,
           "text": "Яндекс Трекер | Обзор фич в карточках   #бизнесПроцессы   #ЯндексТрекер   #AI   #автоматизация",
           "url": "https://t.me/noroutine2026/189"
         }
@@ -886,7 +893,7 @@
     },
     "max": {
       "subscribers": 7,
-      "total_views": 360,
+      "total_views": 370,
       "daily": [
         {
           "date": "2026-10-23",
@@ -1062,41 +1069,48 @@
           "new_views": 6,
           "posts": 39,
           "subscribers": 7
+        },
+        {
+          "date": "2026-11-17",
+          "total_views": 370,
+          "new_views": 10,
+          "posts": 40,
+          "subscribers": 7
         }
       ],
       "posts": [
         {
           "id": "mid.ffffbf5e8117157d019d365b105e00d2",
           "date": "2026-03-28",
-          "views": 21,
+          "views": 22,
           "text": "https://rutube.ru/video/266f4784cbc6956660f878a1aaa3b89a/?r=wd",
           "url": "https://max.ru/channel_noroutine/AZ02WxBeANI"
         },
         {
           "id": "mid.ffffbf5e8117157d019d3ab64060227d",
           "date": "2026-03-29",
-          "views": 30,
+          "views": 32,
           "text": "Привет! Как дела?",
           "url": "https://max.ru/channel_noroutine/AZ06tkBgIn0"
         },
         {
           "id": "mid.ffffbf5e8117157d019d3e4740753338",
           "date": "2026-03-30",
-          "views": 24,
+          "views": 25,
           "text": "Тест",
           "url": "https://max.ru/channel_noroutine/AZ0-R0B1Mzg"
         },
         {
           "id": "mid.ffffbf5e8117157d019d3e43f2090bc5",
           "date": "2026-03-30",
-          "views": 24,
+          "views": 26,
           "text": "Тест",
           "url": "https://max.ru/channel_noroutine/AZ0-Q_IJC8U"
         },
         {
           "id": "mid.ffffbf5e8117157d019d67ce164b5543",
           "date": "2026-04-07",
-          "views": 26,
+          "views": 27,
           "text": "https://rutube.ru/video/9717098d5b775538052c254cd4719b14/",
           "url": "https://max.ru/channel_noroutine/AZ1nzhZLVUM"
         },
@@ -1334,14 +1348,14 @@
         {
           "id": "mid.ffffbf5e8117157d01a1d6cd237f234d",
           "date": "2026-11-13",
-          "views": 5,
+          "views": 6,
           "text": "https://rutube.ru/video/7282949b1f18a1a4a0a255acda1f9799/\n\nЯндекс Трекер | Обзор фич\n\n🎬 Продолжаем серию про Яндекс Трек",
           "url": "https://max.ru/channel_noroutine/AaHWzSN_I00"
         },
         {
           "id": "mid.ffffbf5e8117157d01a1e40f8808567d",
           "date": "2026-11-16",
-          "views": 1,
+          "views": 3,
           "text": "Яндекс Трекер | Обзор фич в карточках",
           "url": "https://max.ru/channel_noroutine/AaHkD4gIVn0"
         }
